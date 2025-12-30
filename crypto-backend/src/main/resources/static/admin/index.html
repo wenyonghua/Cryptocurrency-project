@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Platform - 管理后台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-info span {
+            font-size: 14px;
+        }
+        
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+        
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        
+        .container {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        
+        .menu-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .menu-item:hover {
+            background: #f5f7fa;
+            border-left-color: #667eea;
+        }
+        
+        .menu-item.active {
+            background: #f0f3ff;
+            border-left-color: #667eea;
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            border-left: 4px solid #667eea;
+        }
+        
+        .stat-card h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .stat-card .value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        table th {
+            background: #f5f7fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 14px;
+        }
+        
+        table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Crypto Platform 管理后台</h1>
+        <div class="user-info">
+            <span id="username">加载中...</span>
+            <button class="btn-logout" onclick="logout()">退出登录</button>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="sidebar">
+            <div class="menu-item active" onclick="showPage('dashboard')">
+                📊 数据概览
+            </div>
+            <div class="menu-item" onclick="showPage('users')">
+                👥 用户管理
+            </div>
+            <div class="menu-item" onclick="showPage('assets')">
+                💰 资产管理
+            </div>
+            <div class="menu-item" onclick="showPage('config')">
+                ⚙️ 系统配置
+            </div>
+        </div>
+        
+        <div class="content">
+            <!-- 数据概览页面 -->
+            <div id="dashboard-page">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>总用户数</h3>
+                        <div class="value" id="totalUsers">0</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #3498db;">
+                        <h3>活跃用户</h3>
+                        <div class="value" id="activeUsers">0</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #2ecc71;">
+                        <h3>总资产 (USDT)</h3>
+                        <div class="value" id="totalAssets">0</div>
+                    </div>
+                    <div class="stat-card" style="border-left-color: #f39c12;">
+                        <h3>今日交易量</h3>
+                        <div class="value" id="todayVolume">0</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-title">系统信息</div>
+                    <p>欢迎使用 Crypto Platform 管理后台！</p>
+                    <p style="margin-top: 10px; color: #666;">当前版本: v1.0.0</p>
+                </div>
+            </div>
+            
+            <!-- 用户管理页面 -->
+            <div id="users-page" style="display: none;">
+                <div class="card">
+                    <div class="card-title">用户列表</div>
+                    <div id="usersTable" class="loading">加载中...</div>
+                </div>
+            </div>
+            
+            <!-- 资产管理页面 -->
+            <div id="assets-page" style="display: none;">
+                <div class="card">
+                    <div class="card-title">资产管理</div>
+                    <p>资产管理功能开发中...</p>
+                </div>
+            </div>
+            
+            <!-- 系统配置页面 -->
+            <div id="config-page" style="display: none;">
+                <div class="card">
+                    <div class="card-title">系统配置</div>
+                    <div id="configTable" class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api';
+        let token = localStorage.getItem('token');
+        
+        // 检查登录状态
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+        
+        // 加载用户信息
+        function loadUserInfo() {
+            const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+            document.getElementById('username').textContent = userInfo.username || '未知用户';
+        }
+        
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('userInfo');
+            window.location.href = 'login.html';
+        }
+        
+        // 切换页面
+        function showPage(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('[id$="-page"]').forEach(el => el.style.display = 'none');
+            // 显示选中页面
+            document.getElementById(page + '-page').style.display = 'block';
+            
+            // 更新菜单状态
+            document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // 加载对应数据
+            if (page === 'users') {
+                loadUsers();
+            } else if (page === 'config') {
+                loadConfig();
+            }
+        }
+        
+        // API 请求封装
+        async function apiRequest(url, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            };
+            
+            try {
+                const response = await fetch(API_BASE + url, {
+                    ...options,
+                    headers
+                });
+                
+                if (response.status === 401) {
+                    logout();
+                    return null;
+                }
+                
+                return await response.json();
+            } catch (error) {
+                console.error('API请求失败:', error);
+                return null;
+            }
+        }
+        
+        // 加载用户列表
+        async function loadUsers() {
+            const result = await apiRequest('/admin/user/list?page=1&size=10');
+            
+            if (result && result.code === 200) {
+                const users = result.data.records || [];
+                const html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>昵称</th>
+                                <th>邮箱</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(user => `
+                                <tr>
+                                    <td>${user.id}</td>
+                                    <td>${user.username}</td>
+                                    <td>${user.nickname || '-'}</td>
+                                    <td>${user.email || '-'}</td>
+                                    <td>
+                                        <span class="badge ${user.status === 1 ? 'badge-success' : 'badge-danger'}">
+                                            ${user.status === 1 ? '正常' : '禁用'}
+                                        </span>
+                                    </td>
+                                    <td>${user.createTime || '-'}</td>
+                                    <td>
+                                        <button class="btn btn-primary" onclick="viewUser(${user.id})">查看</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('usersTable').innerHTML = html;
+                
+                // 更新统计数据
+                document.getElementById('totalUsers').textContent = result.data.total || 0;
+            } else {
+                document.getElementById('usersTable').innerHTML = '<p>加载失败</p>';
+            }
+        }
+        
+        // 加载系统配置
+        async function loadConfig() {
+            const result = await apiRequest('/system/config/list?page=1&size=10');
+            
+            if (result && result.code === 200) {
+                const configs = result.data.records || [];
+                const html = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>配置键</th>
+                                <th>配置值</th>
+                                <th>类型</th>
+                                <th>备注</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${configs.length > 0 ? configs.map(config => `
+                                <tr>
+                                    <td>${config.configKey}</td>
+                                    <td>${config.configValue}</td>
+                                    <td>${config.configType || '-'}</td>
+                                    <td>${config.remark || '-'}</td>
+                                    <td>
+                                        <button class="btn btn-primary">编辑</button>
+                                    </td>
+                                </tr>
+                            `).join('') : '<tr><td colspan="5" style="text-align: center;">暂无配置数据</td></tr>'}
+                        </tbody>
+                    </table>
+                `;
+                document.getElementById('configTable').innerHTML = html;
+            } else {
+                document.getElementById('configTable').innerHTML = '<p>加载失败</p>';
+            }
+        }
+        
+        // 查看用户详情
+        function viewUser(userId) {
+            alert('查看用户 ID: ' + userId);
+        }
+        
+        // 初始化
+        loadUserInfo();
+        loadUsers();
+    </script>
+</body>
+</html>
