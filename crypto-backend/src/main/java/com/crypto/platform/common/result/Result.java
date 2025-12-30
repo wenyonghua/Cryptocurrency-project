@@ -49,6 +49,16 @@ public class Result<T> implements Serializable {
     }
 
     /**
+     * 成功返回（自定义消息）
+     */
+    public static <T> Result<T> success(String message) {
+        Result<T> result = new Result<>();
+        result.setCode(200);
+        result.setMessage(message);
+        return result;
+    }
+
+    /**
      * 成功返回（带数据）
      */
     public static <T> Result<T> success(T data) {
