@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>交易对配置管理 - Crypto Platform</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .layout-container { height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-title { font-size: 20px; font-weight: 600; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        .toolbar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .table-container { background: white; border-radius: 8px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="app" class="layout-container">
+        <div class="header">
+            <div class="header-title">💎 交易对配置管理</div>
+            <div>
+                <el-button type="primary" size="small" @click="goBack">返回主页</el-button>
+                <el-button type="danger" size="small" @click="logout">退出登录</el-button>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="toolbar">
+                <el-button type="primary" @click="handleAdd">新增交易对</el-button>
+            </div>
+
+            <div class="table-container">
+                <el-table :data="tableData" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="currencyCode" label="交易对代码" width="120"></el-table-column>
+                    <el-table-column prop="currencyName" label="交易对名称" width="150"></el-table-column>
+                    <el-table-column prop="icon" label="图标" width="80">
+                        <template #default="scope">
+                            <img :src="scope.row.icon" style="width: 32px; height: 32px;" />
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="withdrawFee" label="提现手续费" width="120"></el-table-column>
+                    <el-table-column prop="minWithdraw" label="最小提现" width="120"></el-table-column>
+                    <el-table-column prop="maxWithdraw" label="最大提现" width="120"></el-table-column>
+                    <el-table-column prop="canDeposit" label="可充值" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.canDeposit ? 'success' : 'danger'">
+                                {{ scope.row.canDeposit ? '是' : '否' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="canWithdraw" label="可提现" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.canWithdraw ? 'success' : 'danger'">
+                                {{ scope.row.canWithdraw ? '是' : '否' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+                                {{ scope.row.status === 1 ? '启用' : '禁用' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="250" fixed="right">
+                        <template #default="scope">
+                            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+                            <el-button size="small" type="warning" @click="handleToggleStatus(scope.row)">
+                                {{ scope.row.status === 1 ? '禁用' : '启用' }}
+                            </el-button>
+                            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    v-model:page-size="pagination.size"
+                    :total="pagination.total"
+                    :page-sizes="[10, 20, 50, 100]"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    style="margin-top: 20px; justify-content: flex-end;">
+                </el-pagination>
+            </div>
+        </div>
+
+        <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+            <el-form :model="formData" label-width="120px">
+                <el-form-item label="交易对代码">
+                    <el-input v-model="formData.currencyCode" placeholder="如：BTC"></el-input>
+                </el-form-item>
+                <el-form-item label="交易对名称">
+                    <el-input v-model="formData.currencyName" placeholder="如：比特币"></el-input>
+                </el-form-item>
+                <el-form-item label="图标URL">
+                    <el-input v-model="formData.icon" placeholder="请输入图标URL"></el-input>
+                </el-form-item>
+                <el-form-item label="提现手续费">
+                    <el-input v-model="formData.withdrawFee" placeholder="请输入提现手续费"></el-input>
+                </el-form-item>
+                <el-form-item label="最小提现">
+                    <el-input v-model="formData.minWithdraw" placeholder="请输入最小提现金额"></el-input>
+                </el-form-item>
+                <el-form-item label="最大提现">
+                    <el-input v-model="formData.maxWithdraw" placeholder="请输入最大提现金额"></el-input>
+                </el-form-item>
+                <el-form-item label="可充值">
+                    <el-switch v-model="formData.canDeposit"></el-switch>
+                </el-form-item>
+                <el-form-item label="可提现">
+                    <el-switch v-model="formData.canWithdraw"></el-switch>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-radio-group v-model="formData.status">
+                        <el-radio :label="1">启用</el-radio>
+                        <el-radio :label="0">禁用</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="handleSubmit">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                const loading = ref(false);
+                const dialogVisible = ref(false);
+                const dialogTitle = ref('新增交易对');
+                const pagination = reactive({ page: 1, size: 10, total: 0 });
+                const tableData = ref([]);
+                const formData = reactive({
+                    currencyCode: '', currencyName: '', icon: '', withdrawFee: '',
+                    minWithdraw: '', maxWithdraw: '', canDeposit: true, canWithdraw: true, status: 1
+                });
+                
+                const mockData = [
+                    { id: 1, currencyCode: 'BTC', currencyName: '比特币', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', withdrawFee: '0.0005', minWithdraw: '0.001', maxWithdraw: '10', canDeposit: true, canWithdraw: true, status: 1 },
+                    { id: 2, currencyCode: 'ETH', currencyName: '以太坊', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', withdrawFee: '0.005', minWithdraw: '0.01', maxWithdraw: '100', canDeposit: true, canWithdraw: true, status: 1 },
+                    { id: 3, currencyCode: 'USDT', currencyName: '泰达币', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.png', withdrawFee: '1', minWithdraw: '10', maxWithdraw: '100000', canDeposit: true, canWithdraw: true, status: 1 }
+                ];
+
+                
+                const loadData = () => {
+                    loading.value = true;
+                    setTimeout(() => {
+                        tableData.value = mockData;
+                        pagination.total = mockData.length;
+                        loading.value = false;
+                    }, 500);
+                };
+                
+                const handleAdd = () => {
+                    dialogTitle.value = '新增交易对';
+                    Object.keys(formData).forEach(key => {
+                        if (key === 'status') formData[key] = 1;
+                        else if (key === 'canDeposit' || key === 'canWithdraw') formData[key] = true;
+                        else formData[key] = '';
+                    });
+                    dialogVisible.value = true;
+                };
+                
+                const handleEdit = (row) => {
+                    dialogTitle.value = '编辑交易对';
+                    Object.assign(formData, row);
+                    dialogVisible.value = true;
+                };
+                
+                const handleSubmit = () => {
+                    ElementPlus.ElMessage.success('保存成功');
+                    dialogVisible.value = false;
+                    loadData();
+                };
+                
+                const handleToggleStatus = (row) => {
+                    const action = row.status === 1 ? '禁用' : '启用';
+                    ElementPlus.ElMessageBox.confirm(`确定要${action}该交易对吗？`, '提示', {
+                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success(`${action}成功`);
+                        loadData();
+                    }).catch(() => {});
+                };
+                
+                const handleDelete = (row) => {
+                    ElementPlus.ElMessageBox.confirm('确定要删除该交易对吗？', '提示', {
+                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success('删除成功');
+                        loadData();
+                    }).catch(() => {});
+                };
+                
+                const handleSizeChange = (size) => { pagination.size = size; loadData(); };
+                const handleCurrentChange = (page) => { pagination.page = page; loadData(); };
+                const goBack = () => { window.location.href = 'dashboard.html'; };
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'login.html';
+                };
+                
+                onMounted(() => { loadData(); });
+                
+                return {
+                    loading, dialogVisible, dialogTitle, pagination, tableData, formData,
+                    handleAdd, handleEdit, handleSubmit, handleToggleStatus, handleDelete,
+                    handleSizeChange, handleCurrentChange, goBack, logout
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

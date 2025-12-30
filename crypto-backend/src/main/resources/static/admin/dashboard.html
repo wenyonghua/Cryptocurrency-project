@@ -522,6 +522,27 @@
                 
                 // 菜单选择
                 const handleMenuSelect = (index) => {
+                    // 需要跳转到独立页面的菜单项
+                    const pageMap = {
+                        'spot-order': 'spot-trade.html',
+                        'seconds-order': 'seconds-contract.html',
+                        'cycle-order': 'cycle-contract.html',
+                        'finance-product': 'finance-product.html',
+                        'mining-config': 'mining-config.html',
+                        'loan-config': 'loan-config.html',
+                        'ieo-project': 'ieo-project.html',
+                        'currency-config': 'currency-config.html',
+                        'trading-pair': 'trading-pair.html',
+                        'system-config': 'system-config.html'
+                    };
+                    
+                    // 如果是需要跳转的页面，直接跳转
+                    if (pageMap[index]) {
+                        window.location.href = pageMap[index];
+                        return;
+                    }
+                    
+                    // 否则切换内部视图
                     activeMenu.value = index;
                     
                     // 根据菜单加载对应数据
@@ -532,6 +553,7 @@
                     } else if (index === 'withdraw-list') {
                         loadWithdraws();
                     }
+
                 };
                 
                 // 加载用户列表

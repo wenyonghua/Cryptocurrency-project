@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>秒合约管理 - Crypto Platform</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .layout-container { height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-title { font-size: 20px; font-weight: 600; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        .search-form { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .table-container { background: white; border-radius: 8px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="app" class="layout-container">
+        <div class="header">
+            <div class="header-title">📊 秒合约管理</div>
+            <div>
+                <el-button type="primary" size="small" @click="goBack">返回主页</el-button>
+                <el-button type="danger" size="small" @click="logout">退出登录</el-button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 搜索表单 -->
+            <div class="search-form">
+                <el-form :inline="true" :model="searchForm">
+                    <el-form-item label="订单号">
+                        <el-input v-model="searchForm.orderNo" placeholder="请输入订单号" clearable></el-input>
+                    </el-form-item>
+                    <el-form-item label="用户ID">
+                        <el-input v-model="searchForm.userId" placeholder="请输入用户ID" clearable></el-input>
+                    </el-form-item>
+                    <el-form-item label="交易对">
+                        <el-select v-model="searchForm.tradingPair" placeholder="请选择交易对" clearable>
+                            <el-option label="BTC/USDT" value="BTC/USDT"></el-option>
+                            <el-option label="ETH/USDT" value="ETH/USDT"></el-option>
+                            <el-option label="BNB/USDT" value="BNB/USDT"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="交易类型">
+                        <el-select v-model="searchForm.orderType" placeholder="请选择交易类型" clearable>
+                            <el-option label="买入" value="1"></el-option>
+                            <el-option label="卖出" value="2"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item label="订单状态">
+                        <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
+                            <el-option label="待成交" value="0"></el-option>
+                            <el-option label="部分成交" value="1"></el-option>
+                            <el-option label="完全成交" value="2"></el-option>
+                            <el-option label="已取消" value="3"></el-option>
+                        </el-select>
+                    </el-form-item>
+                    <el-form-item>
+                        <el-button type="primary" @click="handleSearch">查询</el-button>
+                        <el-button @click="handleReset">重置</el-button>
+                    </el-form-item>
+                </el-form>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="table-container">
+                <el-table :data="tableData" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="orderNo" label="订单号" width="180"></el-table-column>
+                    <el-table-column prop="userId" label="用户ID" width="100"></el-table-column>
+                    <el-table-column prop="tradingPair" label="交易对" width="120"></el-table-column>
+                    <el-table-column prop="orderType" label="交易类型" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.orderType === 1 ? 'success' : 'danger'">
+                                {{ scope.row.orderType === 1 ? '买入' : '卖出' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="price" label="价格" width="120"></el-table-column>
+                    <el-table-column prop="amount" label="数量" width="120"></el-table-column>
+                    <el-table-column prop="totalAmount" label="总金额" width="120"></el-table-column>
+                    <el-table-column prop="filledAmount" label="已成交数量" width="120"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag :type="getStatusType(scope.row.status)">
+                                {{ getStatusText(scope.row.status) }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                    <el-table-column label="操作" width="200" fixed="right">
+                        <template #default="scope">
+                            <el-button size="small" @click="handleView(scope.row)">详情</el-button>
+                            <el-button size="small" type="danger" @click="handleCancel(scope.row)" 
+                                       v-if="scope.row.status === 0 || scope.row.status === 1">撤单</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    v-model:page-size="pagination.size"
+                    :total="pagination.total"
+                    :page-sizes="[10, 20, 50, 100]"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    style="margin-top: 20px; justify-content: flex-end;">
+                </el-pagination>
+            </div>
+        </div>
+
+        <!-- 详情对话框 -->
+        <el-dialog v-model="detailVisible" title="订单详情" width="600px">
+            <el-descriptions :column="2" border v-if="currentRow">
+                <el-descriptions-item label="订单号">{{ currentRow.orderNo }}</el-descriptions-item>
+                <el-descriptions-item label="用户ID">{{ currentRow.userId }}</el-descriptions-item>
+                <el-descriptions-item label="交易对">{{ currentRow.tradingPair }}</el-descriptions-item>
+                <el-descriptions-item label="交易类型">
+                    <el-tag :type="currentRow.orderType === 1 ? 'success' : 'danger'">
+                        {{ currentRow.orderType === 1 ? '买入' : '卖出' }}
+                    </el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="价格">{{ currentRow.price }}</el-descriptions-item>
+                <el-descriptions-item label="数量">{{ currentRow.amount }}</el-descriptions-item>
+                <el-descriptions-item label="总金额">{{ currentRow.totalAmount }}</el-descriptions-item>
+                <el-descriptions-item label="已成交数量">{{ currentRow.filledAmount }}</el-descriptions-item>
+                <el-descriptions-item label="手续费">{{ currentRow.fee }}</el-descriptions-item>
+                <el-descriptions-item label="状态">
+                    <el-tag :type="getStatusType(currentRow.status)">
+                        {{ getStatusText(currentRow.status) }}
+                    </el-tag>
+                </el-descriptions-item>
+                <el-descriptions-item label="创建时间" :span="2">{{ currentRow.createTime }}</el-descriptions-item>
+                <el-descriptions-item label="更新时间" :span="2">{{ currentRow.updateTime }}</el-descriptions-item>
+            </el-descriptions>
+        </el-dialog>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+
+        
+        createApp({
+            setup() {
+                const loading = ref(false);
+                const detailVisible = ref(false);
+                const currentRow = ref(null);
+                
+                const searchForm = reactive({
+                    orderNo: '',
+                    userId: '',
+                    tradingPair: '',
+                    orderType: '',
+                    status: ''
+                });
+                
+                const pagination = reactive({
+                    page: 1,
+                    size: 10,
+                    total: 0
+                });
+                
+                const tableData = ref([]);
+                
+                // 模拟数据
+                const mockData = [
+                    { id: 1, orderNo: 'SEC202512300001', userId: 1001, tradingPair: 'BTC/USDT', orderType: 1, price: '42,500.00', amount: '0.5', totalAmount: '21,250.00', filledAmount: '0.5', fee: '21.25', status: 2, createTime: '2025-12-30 10:30:00', updateTime: '2025-12-30 10:30:15' },
+                    { id: 2, orderNo: 'SEC202512300002', userId: 1002, tradingPair: 'ETH/USDT', orderType: 2, price: '2,250.00', amount: '2.0', totalAmount: '4,500.00', filledAmount: '1.0', fee: '4.50', status: 1, createTime: '2025-12-30 11:15:00', updateTime: '2025-12-30 11:20:00' },
+                    { id: 3, orderNo: 'SEC202512300003', userId: 1003, tradingPair: 'BNB/USDT', orderType: 1, price: '310.00', amount: '10.0', totalAmount: '3,100.00', filledAmount: '0.0', fee: '0.00', status: 0, createTime: '2025-12-30 12:00:00', updateTime: '2025-12-30 12:00:00' },
+                    { id: 4, orderNo: 'SEC202512300004', userId: 1004, tradingPair: 'BTC/USDT', orderType: 2, price: '42,800.00', amount: '0.3', totalAmount: '12,840.00', filledAmount: '0.0', fee: '0.00', status: 3, createTime: '2025-12-30 13:30:00', updateTime: '2025-12-30 13:35:00' },
+                    { id: 5, orderNo: 'SEC202512300005', userId: 1005, tradingPair: 'ETH/USDT', orderType: 1, price: '2,260.00', amount: '5.0', totalAmount: '11,300.00', filledAmount: '5.0', fee: '11.30', status: 2, createTime: '2025-12-30 14:00:00', updateTime: '2025-12-30 14:00:30' }
+                ];
+                
+                const loadData = () => {
+                    loading.value = true;
+                    setTimeout(() => {
+                        tableData.value = mockData;
+                        pagination.total = mockData.length;
+                        loading.value = false;
+                    }, 500);
+                };
+                
+                const handleSearch = () => { loadData(); };
+                const handleReset = () => {
+                    Object.keys(searchForm).forEach(key => searchForm[key] = '');
+                    loadData();
+                };
+                const handleSizeChange = (size) => { pagination.size = size; loadData(); };
+                const handleCurrentChange = (page) => { pagination.page = page; loadData(); };
+                const handleView = (row) => { currentRow.value = row; detailVisible.value = true; };
+                const handleCancel = (row) => {
+                    ElementPlus.ElMessageBox.confirm('确定要撤销该订单吗？', '提示', {
+                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success('撤单成功');
+                        loadData();
+                    }).catch(() => {});
+                };
+                const getStatusType = (status) => {
+                    const types = { 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' };
+                    return types[status] || 'info';
+                };
+                const getStatusText = (status) => {
+                    const texts = { 0: '待成交', 1: '部分成交', 2: '完全成交', 3: '已取消' };
+                    return texts[status] || '未知';
+                };
+                const goBack = () => { window.location.href = 'dashboard.html'; };
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'login.html';
+                };
+                
+                onMounted(() => { loadData(); });
+                
+                return {
+                    loading, detailVisible, currentRow, searchForm, pagination, tableData,
+                    handleSearch, handleReset, handleSizeChange, handleCurrentChange,
+                    handleView, handleCancel, getStatusType, getStatusText, goBack, logout
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

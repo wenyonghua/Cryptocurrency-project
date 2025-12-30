@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>借贷配置管理 - Crypto Platform</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .layout-container { height: 100vh; display: flex; flex-direction: column; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .header-title { font-size: 20px; font-weight: 600; }
+        .content { flex: 1; padding: 20px; overflow-y: auto; }
+        .toolbar { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .table-container { background: white; border-radius: 8px; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div id="app" class="layout-container">
+        <div class="header">
+            <div class="header-title">💰 借贷配置管理</div>
+            <div>
+                <el-button type="primary" size="small" @click="goBack">返回主页</el-button>
+                <el-button type="danger" size="small" @click="logout">退出登录</el-button>
+            </div>
+        </div>
+
+        <div class="content">
+            <!-- 工具栏 -->
+            <div class="toolbar">
+                <el-button type="primary" @click="handleAdd">新增借贷</el-button>
+            </div>
+
+            <!-- 数据表格 -->
+            <div class="table-container">
+                <el-table :data="tableData" border stripe v-loading="loading">
+                    <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                    <el-table-column prop="productName" label="借贷名称" width="200"></el-table-column>
+                    <el-table-column prop="currency" label="币种" width="100"></el-table-column>
+                    <el-table-column prop="minAmount" label="最小金额" width="120"></el-table-column>
+                    <el-table-column prop="maxAmount" label="最大金额" width="120"></el-table-column>
+                    <el-table-column prop="annualRate" label="年化收益率" width="120">
+                        <template #default="scope">{{ scope.row.annualRate }}%</template>
+                    </el-table-column>
+                    <el-table-column prop="lockDays" label="锁定天数" width="100"></el-table-column>
+                    <el-table-column prop="totalQuota" label="总额度" width="150"></el-table-column>
+                    <el-table-column prop="remainQuota" label="剩余额度" width="150"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="100">
+                        <template #default="scope">
+                            <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+                                {{ scope.row.status === 1 ? '启用' : '禁用' }}
+                            </el-tag>
+                        </template>
+                    </el-table-column>
+                    <el-table-column label="操作" width="250" fixed="right">
+                        <template #default="scope">
+                            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+                            <el-button size="small" type="warning" @click="handleToggleStatus(scope.row)">
+                                {{ scope.row.status === 1 ? '禁用' : '启用' }}
+                            </el-button>
+                            <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+
+                <el-pagination
+                    v-model:current-page="pagination.page"
+                    v-model:page-size="pagination.size"
+                    :total="pagination.total"
+                    :page-sizes="[10, 20, 50, 100]"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange"
+                    style="margin-top: 20px; justify-content: flex-end;">
+                </el-pagination>
+            </div>
+        </div>
+
+        <!-- 编辑对话框 -->
+        <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
+            <el-form :model="formData" label-width="120px">
+                <el-form-item label="借贷名称">
+                    <el-input v-model="formData.productName" placeholder="请输入借贷名称"></el-input>
+                </el-form-item>
+                <el-form-item label="币种">
+                    <el-select v-model="formData.currency" placeholder="请选择币种">
+                        <el-option label="USDT" value="USDT"></el-option>
+                        <el-option label="BTC" value="BTC"></el-option>
+                        <el-option label="ETH" value="ETH"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="最小金额">
+                    <el-input v-model="formData.minAmount" placeholder="请输入最小金额"></el-input>
+                </el-form-item>
+                <el-form-item label="最大金额">
+                    <el-input v-model="formData.maxAmount" placeholder="请输入最大金额"></el-input>
+                </el-form-item>
+                <el-form-item label="年化收益率(%)">
+                    <el-input v-model="formData.annualRate" placeholder="请输入年化收益率"></el-input>
+                </el-form-item>
+                <el-form-item label="锁定天数">
+                    <el-input v-model="formData.lockDays" placeholder="请输入锁定天数"></el-input>
+                </el-form-item>
+                <el-form-item label="总额度">
+                    <el-input v-model="formData.totalQuota" placeholder="请输入总额度"></el-input>
+                </el-form-item>
+                <el-form-item label="状态">
+                    <el-radio-group v-model="formData.status">
+                        <el-radio :label="1">启用</el-radio>
+                        <el-radio :label="0">禁用</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="handleSubmit">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        
+        createApp({
+            setup() {
+                const loading = ref(false);
+                const dialogVisible = ref(false);
+                const dialogTitle = ref('新增借贷');
+                const pagination = reactive({ page: 1, size: 10, total: 0 });
+                const tableData = ref([]);
+                const formData = reactive({
+                    productName: '', currency: '', minAmount: '', maxAmount: '',
+                    annualRate: '', lockDays: '', totalQuota: '', status: 1
+                });
+                
+                const mockData = [
+                    { id: 1, productName: '稳健理财30天', currency: 'USDT', minAmount: '100', maxAmount: '100,000', annualRate: '8.00', lockDays: 30, totalQuota: '1,000,000', remainQuota: '500,000', status: 1 },
+                    { id: 2, productName: 'BTC增值计划60天', currency: 'BTC', minAmount: '0.01', maxAmount: '10', annualRate: '12.00', lockDays: 60, totalQuota: '100', remainQuota: '50', status: 1 },
+                    { id: 3, productName: 'ETH高收益90天', currency: 'ETH', minAmount: '0.1', maxAmount: '100', annualRate: '15.00', lockDays: 90, totalQuota: '1,000', remainQuota: '800', status: 1 }
+                ];
+                
+                const loadData = () => {
+                    loading.value = true;
+                    setTimeout(() => {
+                        tableData.value = mockData;
+                        pagination.total = mockData.length;
+                        loading.value = false;
+                    }, 500);
+                };
+                
+                const handleAdd = () => {
+                    dialogTitle.value = '新增借贷';
+                    Object.keys(formData).forEach(key => formData[key] = key === 'status' ? 1 : '');
+                    dialogVisible.value = true;
+                };
+                
+                const handleEdit = (row) => {
+                    dialogTitle.value = '编辑借贷';
+                    Object.assign(formData, row);
+                    dialogVisible.value = true;
+                };
+
+                
+                const handleSubmit = () => {
+                    ElementPlus.ElMessage.success('保存成功');
+                    dialogVisible.value = false;
+                    loadData();
+                };
+                
+                const handleToggleStatus = (row) => {
+                    const action = row.status === 1 ? '禁用' : '启用';
+                    ElementPlus.ElMessageBox.confirm(`确定要${action}该借贷吗？`, '提示', {
+                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success(`${action}成功`);
+                        loadData();
+                    }).catch(() => {});
+                };
+                
+                const handleDelete = (row) => {
+                    ElementPlus.ElMessageBox.confirm('确定要删除该借贷吗？', '提示', {
+                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success('删除成功');
+                        loadData();
+                    }).catch(() => {});
+                };
+                
+                const handleSizeChange = (size) => { pagination.size = size; loadData(); };
+                const handleCurrentChange = (page) => { pagination.page = page; loadData(); };
+                const goBack = () => { window.location.href = 'dashboard.html'; };
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'login.html';
+                };
+                
+                onMounted(() => { loadData(); });
+                
+                return {
+                    loading, dialogVisible, dialogTitle, pagination, tableData, formData,
+                    handleAdd, handleEdit, handleSubmit, handleToggleStatus, handleDelete,
+                    handleSizeChange, handleCurrentChange, goBack, logout
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
