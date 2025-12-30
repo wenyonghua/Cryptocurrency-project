@@ -34,7 +34,12 @@ public class UserAsset implements Serializable {
      * 币种
      */
     private String currency;
-    
+
+    /**
+     * 资产类型：1-平台资产，2-理财资产，3-合约资产
+     */
+    private Integer assetType;
+
     /**
      * 可用余额
      */
