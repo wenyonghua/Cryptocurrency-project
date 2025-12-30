@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crypto Platform - 管理后台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+        }
+        
+        .layout-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: #fff;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+            overflow-y: auto;
+        }
+        
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .search-form {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .table-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="layout-container">
+        <div class="header">
+            <div class="header-title">🚀 Crypto Platform 管理后台</div>
+            <div>
+                <span style="margin-right: 20px;">{{ userInfo.username }}</span>
+                <el-button type="danger" size="small" @click="logout">退出登录</el-button>
+            </div>
+        </div>
+        
+        <div class="main-container">
+            <div class="sidebar">
+                <el-menu :default-active="activeMenu" @select="handleMenuSelect">
+                    <el-menu-item index="dashboard">
+                        <el-icon><DataAnalysis /></el-icon>
+                        <span>数据概览</span>
+                    </el-menu-item>
+                    
+                    <el-sub-menu index="user">
+                        <template #title>
+                            <el-icon><User /></el-icon>
+                            <span>玩家管理</span>
+                        </template>
+                        <el-menu-item index="user-list">玩家用户</el-menu-item>
+                        <el-menu-item index="user-asset">玩家资产</el-menu-item>
+                        <el-menu-item index="user-kyc">实名认证</el-menu-item>
+                    </el-sub-menu>
+                    
+                    <el-sub-menu index="deposit">
+                        <template #title>
+                            <el-icon><Wallet /></el-icon>
+                            <span>充提管理</span>
+                        </template>
+                        <el-menu-item index="deposit-list">充值记录</el-menu-item>
+                        <el-menu-item index="withdraw-list">提现记录</el-menu-item>
+                    </el-sub-menu>
+                    
+                    <el-sub-menu index="trade">
+                        <template #title>
+                            <el-icon><TrendCharts /></el-icon>
+                            <span>交易管理</span>
+                        </template>
+                        <el-menu-item index="spot-order">现货交易</el-menu-item>
+                        <el-menu-item index="seconds-order">秒合约</el-menu-item>
+                        <el-menu-item index="cycle-order">周期合约</el-menu-item>
+                    </el-sub-menu>
+                    
+                    <el-sub-menu index="finance">
+                        <template #title>
+                            <el-icon><Money /></el-icon>
+                            <span>金融产品</span>
+                        </template>
+                        <el-menu-item index="finance-product">理财产品</el-menu-item>
+                        <el-menu-item index="mining-config">挖矿配置</el-menu-item>
+                        <el-menu-item index="loan-config">借贷配置</el-menu-item>
+                        <el-menu-item index="ieo-project">IEO项目</el-menu-item>
+                    </el-sub-menu>
+                    
+                    <el-sub-menu index="system">
+                        <template #title>
+                            <el-icon><Setting /></el-icon>
+                            <span>系统管理</span>
+                        </template>
+                        <el-menu-item index="currency-config">币种配置</el-menu-item>
+                        <el-menu-item index="trading-pair">交易对配置</el-menu-item>
+                        <el-menu-item index="system-config">系统配置</el-menu-item>
+                    </el-sub-menu>
+                </el-menu>
+            </div>
+            
+            <div class="content">
+                <!-- 数据概览 -->
+                <div v-if="activeMenu === 'dashboard'">
+                    <el-row :gutter="20" style="margin-bottom: 20px;">
+                        <el-col :span="6">
+                            <div class="stat-card" style="border-left: 4px solid #667eea;">
+                                <div class="stat-label">平台总收入</div>
+                                <div class="stat-value" style="color: #667eea;">{{ statistics.totalProfit }}</div>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div class="stat-card" style="border-left: 4px solid #f56c6c;">
+                                <div class="stat-label">玩家数量</div>
+                                <div class="stat-value" style="color: #f56c6c;">{{ statistics.totalUsers }}</div>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div class="stat-card" style="border-left: 4px solid #e6a23c;">
+                                <div class="stat-label">总充值金额</div>
+                                <div class="stat-value" style="color: #e6a23c;">{{ statistics.totalDeposit }}</div>
+                            </div>
+                        </el-col>
+                        <el-col :span="6">
+                            <div class="stat-card" style="border-left: 4px solid #67c23a;">
+                                <div class="stat-label">提现金额</div>
+                                <div class="stat-value" style="color: #67c23a;">{{ statistics.totalWithdraw }}</div>
+                            </div>
+                        </el-col>
+                    </el-row>
+                    
+                    <div class="table-container">
+                        <h3 style="margin-bottom: 20px;">最近交易</h3>
+                        <el-table :data="recentOrders" stripe>
+                            <el-table-column prop="orderNo" label="订单号" width="180"></el-table-column>
+                            <el-table-column prop="username" label="用户" width="120"></el-table-column>
+                            <el-table-column prop="type" label="类型" width="100"></el-table-column>
+                            <el-table-column prop="amount" label="金额"></el-table-column>
+                            <el-table-column prop="status" label="状态" width="100">
+                                <template #default="scope">
+                                    <el-tag :type="scope.row.status === 1 ? 'success' : 'warning'">
+                                        {{ scope.row.status === 1 ? '成功' : '处理中' }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="createTime" label="时间" width="180"></el-table-column>
+                        </el-table>
+                    </div>
+                </div>
+                
+                <!-- 玩家用户列表 -->
+                <div v-if="activeMenu === 'user-list'">
+                    <div class="search-form">
+                        <el-form :inline="true" :model="userQuery">
+                            <el-form-item label="用户ID">
+                                <el-input v-model="userQuery.userId" placeholder="请输入用户ID"></el-input>
+                            </el-form-item>
+                            <el-form-item label="登录名">
+                                <el-input v-model="userQuery.username" placeholder="请输入登录名"></el-input>
+                            </el-form-item>
+                            <el-form-item label="手机号">
+                                <el-input v-model="userQuery.phone" placeholder="请输入手机号"></el-input>
+                            </el-form-item>
+                            <el-form-item label="邮箱">
+                                <el-input v-model="userQuery.email" placeholder="请输入邮箱"></el-input>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="searchUsers">搜索</el-button>
+                                <el-button @click="resetUserQuery">重置</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                    
+                    <div class="table-container">
+                        <el-table :data="userList" stripe v-loading="loading">
+                            <el-table-column prop="id" label="用户ID" width="80"></el-table-column>
+                            <el-table-column prop="username" label="登录名" width="120"></el-table-column>
+                            <el-table-column prop="uid" label="UID" width="120"></el-table-column>
+                            <el-table-column prop="email" label="邮箱" width="180"></el-table-column>
+                            <el-table-column prop="phone" label="手机号" width="120"></el-table-column>
+                            <el-table-column prop="walletAddress" label="地址" width="150" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="kycLevel" label="KYC等级" width="100">
+                                <template #default="scope">
+                                    <el-tag v-if="scope.row.kycLevel === 0" type="info">未认证</el-tag>
+                                    <el-tag v-else-if="scope.row.kycLevel === 1" type="warning">初级</el-tag>
+                                    <el-tag v-else type="success">高级</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="status" label="状态" width="80">
+                                <template #default="scope">
+                                    <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
+                                        {{ scope.row.status === 1 ? '正常' : '禁用' }}
+                                    </el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="createTime" label="注册时间" width="180"></el-table-column>
+                            <el-table-column label="操作" width="300" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" @click="viewUser(scope.row)">详情</el-button>
+                                    <el-button size="small" type="primary" @click="editUser(scope.row)">编辑</el-button>
+                                    <el-button size="small" type="warning" @click="adjustBalance(scope.row)">调整余额</el-button>
+                                    <el-button size="small" :type="scope.row.status === 1 ? 'danger' : 'success'" 
+                                               @click="toggleUserStatus(scope.row)">
+                                        {{ scope.row.status === 1 ? '禁用' : '启用' }}
+                                    </el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        
+                        <el-pagination
+                            v-model:current-page="userQuery.page"
+                            v-model:page-size="userQuery.size"
+                            :total="userTotal"
+                            @current-change="loadUsers"
+                            layout="total, prev, pager, next, jumper"
+                            style="margin-top: 20px; text-align: right;">
+                        </el-pagination>
+                    </div>
+                </div>
+                
+                <!-- 充值记录 -->
+                <div v-if="activeMenu === 'deposit-list'">
+                    <div class="search-form">
+                        <el-form :inline="true" :model="depositQuery">
+                            <el-form-item label="订单号">
+                                <el-input v-model="depositQuery.orderNo" placeholder="请输入订单号"></el-input>
+                            </el-form-item>
+                            <el-form-item label="用户ID">
+                                <el-input v-model="depositQuery.userId" placeholder="请输入用户ID"></el-input>
+                            </el-form-item>
+                            <el-form-item label="币种">
+                                <el-select v-model="depositQuery.currency" placeholder="请选择币种">
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="USDT" value="USDT"></el-option>
+                                    <el-option label="BTC" value="BTC"></el-option>
+                                    <el-option label="ETH" value="ETH"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="状态">
+                                <el-select v-model="depositQuery.status" placeholder="请选择状态">
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="待确认" :value="0"></el-option>
+                                    <el-option label="成功" :value="1"></el-option>
+                                    <el-option label="失败" :value="2"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="searchDeposits">搜索</el-button>
+                                <el-button @click="resetDepositQuery">重置</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                    
+                    <div class="table-container">
+                        <el-table :data="depositList" stripe v-loading="loading">
+                            <el-table-column prop="orderNo" label="订单号" width="180"></el-table-column>
+                            <el-table-column prop="userId" label="用户ID" width="100"></el-table-column>
+                            <el-table-column prop="currency" label="币种" width="80"></el-table-column>
+                            <el-table-column prop="amount" label="金额" width="150"></el-table-column>
+                            <el-table-column prop="fromAddress" label="来源地址" width="150" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="toAddress" label="充值地址" width="150" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="txHash" label="交易哈希" width="150" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="confirmations" label="确认数" width="80"></el-table-column>
+                            <el-table-column prop="status" label="状态" width="100">
+                                <template #default="scope">
+                                    <el-tag v-if="scope.row.status === 0" type="warning">待确认</el-tag>
+                                    <el-tag v-else-if="scope.row.status === 1" type="success">成功</el-tag>
+                                    <el-tag v-else type="danger">失败</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                            <el-table-column label="操作" width="150" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" @click="viewDeposit(scope.row)">详情</el-button>
+                                    <el-button v-if="scope.row.status === 0" size="small" type="success" 
+                                               @click="confirmDeposit(scope.row)">确认</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        
+                        <el-pagination
+                            v-model:current-page="depositQuery.page"
+                            v-model:page-size="depositQuery.size"
+                            :total="depositTotal"
+                            @current-change="loadDeposits"
+                            layout="total, prev, pager, next, jumper"
+                            style="margin-top: 20px; text-align: right;">
+                        </el-pagination>
+                    </div>
+                </div>
+                
+                <!-- 提现记录 -->
+                <div v-if="activeMenu === 'withdraw-list'">
+                    <div class="search-form">
+                        <el-form :inline="true" :model="withdrawQuery">
+                            <el-form-item label="订单号">
+                                <el-input v-model="withdrawQuery.orderNo" placeholder="请输入订单号"></el-input>
+                            </el-form-item>
+                            <el-form-item label="用户ID">
+                                <el-input v-model="withdrawQuery.userId" placeholder="请输入用户ID"></el-input>
+                            </el-form-item>
+                            <el-form-item label="币种">
+                                <el-select v-model="withdrawQuery.currency" placeholder="请选择币种">
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="USDT" value="USDT"></el-option>
+                                    <el-option label="BTC" value="BTC"></el-option>
+                                    <el-option label="ETH" value="ETH"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="状态">
+                                <el-select v-model="withdrawQuery.status" placeholder="请选择状态">
+                                    <el-option label="全部" value=""></el-option>
+                                    <el-option label="待审核" :value="0"></el-option>
+                                    <el-option label="审核通过" :value="1"></el-option>
+                                    <el-option label="审核拒绝" :value="2"></el-option>
+                                    <el-option label="处理中" :value="3"></el-option>
+                                    <el-option label="成功" :value="4"></el-option>
+                                    <el-option label="失败" :value="5"></el-option>
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item>
+                                <el-button type="primary" @click="searchWithdraws">搜索</el-button>
+                                <el-button @click="resetWithdrawQuery">重置</el-button>
+                            </el-form-item>
+                        </el-form>
+                    </div>
+                    
+                    <div class="table-container">
+                        <el-table :data="withdrawList" stripe v-loading="loading">
+                            <el-table-column prop="orderNo" label="订单号" width="180"></el-table-column>
+                            <el-table-column prop="userId" label="用户ID" width="100"></el-table-column>
+                            <el-table-column prop="currency" label="币种" width="80"></el-table-column>
+                            <el-table-column prop="amount" label="金额" width="120"></el-table-column>
+                            <el-table-column prop="fee" label="手续费" width="100"></el-table-column>
+                            <el-table-column prop="actualAmount" label="实际到账" width="120"></el-table-column>
+                            <el-table-column prop="toAddress" label="提现地址" width="150" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="txHash" label="交易哈希" width="150" show-overflow-tooltip></el-table-column>
+                            <el-table-column prop="status" label="状态" width="100">
+                                <template #default="scope">
+                                    <el-tag v-if="scope.row.status === 0" type="warning">待审核</el-tag>
+                                    <el-tag v-else-if="scope.row.status === 1" type="info">审核通过</el-tag>
+                                    <el-tag v-else-if="scope.row.status === 2" type="danger">审核拒绝</el-tag>
+                                    <el-tag v-else-if="scope.row.status === 3" type="primary">处理中</el-tag>
+                                    <el-tag v-else-if="scope.row.status === 4" type="success">成功</el-tag>
+                                    <el-tag v-else type="danger">失败</el-tag>
+                                </template>
+                            </el-table-column>
+                            <el-table-column prop="createTime" label="创建时间" width="180"></el-table-column>
+                            <el-table-column label="操作" width="200" fixed="right">
+                                <template #default="scope">
+                                    <el-button size="small" @click="viewWithdraw(scope.row)">详情</el-button>
+                                    <el-button v-if="scope.row.status === 0" size="small" type="success" 
+                                               @click="approveWithdraw(scope.row)">通过</el-button>
+                                    <el-button v-if="scope.row.status === 0" size="small" type="danger" 
+                                               @click="rejectWithdraw(scope.row)">拒绝</el-button>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        
+                        <el-pagination
+                            v-model:current-page="withdrawQuery.page"
+                            v-model:page-size="withdrawQuery.size"
+                            :total="withdrawTotal"
+                            @current-change="loadWithdraws"
+                            layout="total, prev, pager, next, jumper"
+                            style="margin-top: 20px; text-align: right;">
+                        </el-pagination>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.11/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.3.1/dist/index.min.js"></script>
+    <script>
+        const { createApp, ref, reactive, onMounted } = Vue;
+        const API_BASE = '/api';
+        
+        createApp({
+            setup() {
+                const activeMenu = ref('dashboard');
+                const loading = ref(false);
+                const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'));
+                const token = localStorage.getItem('token');
+                
+                // 统计数据
+                const statistics = reactive({
+                    totalProfit: '1,019,800',
+                    totalUsers: 19,
+                    totalDeposit: '1,020,000',
+                    totalWithdraw: '200'
+                });
+                
+                // 最近订单
+                const recentOrders = ref([]);
+                
+                // 用户管理
+                const userQuery = reactive({
+                    userId: '',
+                    username: '',
+                    phone: '',
+                    email: '',
+                    page: 1,
+                    size: 10
+                });
+                const userList = ref([]);
+                const userTotal = ref(0);
+                
+                // 充值管理
+                const depositQuery = reactive({
+                    orderNo: '',
+                    userId: '',
+                    currency: '',
+                    status: '',
+                    page: 1,
+                    size: 10
+                });
+                const depositList = ref([]);
+                const depositTotal = ref(0);
+                
+                // 提现管理
+                const withdrawQuery = reactive({
+                    orderNo: '',
+                    userId: '',
+                    currency: '',
+                    status: '',
+                    page: 1,
+                    size: 10
+                });
+                const withdrawList = ref([]);
+                const withdrawTotal = ref(0);
+                
+                // API 请求封装
+                const apiRequest = async (url, options = {}) => {
+                    const headers = {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        ...options.headers
+                    };
+                    
+                    try {
+                        const response = await fetch(API_BASE + url, {
+                            ...options,
+                            headers
+                        });
+                        
+                        if (response.status === 401) {
+                            logout();
+                            return null;
+                        }
+                        
+                        return await response.json();
+                    } catch (error) {
+                        console.error('API请求失败:', error);
+                        ElementPlus.ElMessage.error('请求失败');
+                        return null;
+                    }
+                };
+                
+                // 菜单选择
+                const handleMenuSelect = (index) => {
+                    activeMenu.value = index;
+                    
+                    // 根据菜单加载对应数据
+                    if (index === 'user-list') {
+                        loadUsers();
+                    } else if (index === 'deposit-list') {
+                        loadDeposits();
+                    } else if (index === 'withdraw-list') {
+                        loadWithdraws();
+                    }
+                };
+                
+                // 加载用户列表
+                const loadUsers = async () => {
+                    loading.value = true;
+                    const result = await apiRequest(`/admin/user/list?page=${userQuery.page}&size=${userQuery.size}`);
+                    loading.value = false;
+                    
+                    if (result && result.code === 200) {
+                        userList.value = result.data.records || [];
+                        userTotal.value = result.data.total || 0;
+                    }
+                };
+                
+                // 搜索用户
+                const searchUsers = () => {
+                    userQuery.page = 1;
+                    loadUsers();
+                };
+                
+                // 重置用户查询
+                const resetUserQuery = () => {
+                    Object.assign(userQuery, {
+                        userId: '',
+                        username: '',
+                        phone: '',
+                        email: '',
+                        page: 1,
+                        size: 10
+                    });
+                    loadUsers();
+                };
+                
+                // 查看用户
+                const viewUser = (user) => {
+                    ElementPlus.ElMessage.info('查看用户: ' + user.username);
+                };
+                
+                // 编辑用户
+                const editUser = (user) => {
+                    ElementPlus.ElMessage.info('编辑用户: ' + user.username);
+                };
+                
+                // 调整余额
+                const adjustBalance = (user) => {
+                    ElementPlus.ElMessageBox.prompt('请输入调整金额（正数为增加，负数为减少）', '调整余额', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        inputPattern: /^-?\d+(\.\d+)?$/,
+                        inputErrorMessage: '请输入有效的数字'
+                    }).then(({ value }) => {
+                        ElementPlus.ElMessage.success('余额调整成功');
+                    });
+                };
+                
+                // 切换用户状态
+                const toggleUserStatus = async (user) => {
+                    const action = user.status === 1 ? '禁用' : '启用';
+                    ElementPlus.ElMessageBox.confirm(`确定要${action}该用户吗？`, '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(async () => {
+                        const newStatus = user.status === 1 ? 0 : 1;
+                        const result = await apiRequest(`/admin/user/${user.id}/status`, {
+                            method: 'PUT',
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        
+                        if (result && result.code === 200) {
+                            ElementPlus.ElMessage.success(`${action}成功`);
+                            loadUsers();
+                        }
+                    });
+                };
+                
+                // 加载充值记录
+                const loadDeposits = async () => {
+                    loading.value = true;
+                    // 模拟数据
+                    depositList.value = [
+                        {
+                            orderNo: 'DEP20251230001',
+                            userId: 1,
+                            currency: 'USDT',
+                            amount: '1000.00',
+                            fromAddress: '0x1234...5678',
+                            toAddress: '0xabcd...efgh',
+                            txHash: '0x9876...5432',
+                            confirmations: 6,
+                            status: 1,
+                            createTime: '2025-12-30 10:30:00'
+                        }
+                    ];
+                    depositTotal.value = 1;
+                    loading.value = false;
+                };
+                
+                // 搜索充值
+                const searchDeposits = () => {
+                    depositQuery.page = 1;
+                    loadDeposits();
+                };
+                
+                // 重置充值查询
+                const resetDepositQuery = () => {
+                    Object.assign(depositQuery, {
+                        orderNo: '',
+                        userId: '',
+                        currency: '',
+                        status: '',
+                        page: 1,
+                        size: 10
+                    });
+                    loadDeposits();
+                };
+                
+                // 查看充值详情
+                const viewDeposit = (deposit) => {
+                    ElementPlus.ElMessage.info('查看充值: ' + deposit.orderNo);
+                };
+                
+                // 确认充值
+                const confirmDeposit = (deposit) => {
+                    ElementPlus.ElMessageBox.confirm('确定要确认该充值吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success('确认成功');
+                        loadDeposits();
+                    });
+                };
+                
+                // 加载提现记录
+                const loadWithdraws = async () => {
+                    loading.value = true;
+                    // 模拟数据
+                    withdrawList.value = [
+                        {
+                            orderNo: 'WD20251230001',
+                            userId: 1,
+                            currency: 'USDT',
+                            amount: '500.00',
+                            fee: '1.00',
+                            actualAmount: '499.00',
+                            toAddress: '0x1234...5678',
+                            txHash: '',
+                            status: 0,
+                            createTime: '2025-12-30 11:00:00'
+                        }
+                    ];
+                    withdrawTotal.value = 1;
+                    loading.value = false;
+                };
+                
+                // 搜索提现
+                const searchWithdraws = () => {
+                    withdrawQuery.page = 1;
+                    loadWithdraws();
+                };
+                
+                // 重置提现查询
+                const resetWithdrawQuery = () => {
+                    Object.assign(withdrawQuery, {
+                        orderNo: '',
+                        userId: '',
+                        currency: '',
+                        status: '',
+                        page: 1,
+                        size: 10
+                    });
+                    loadWithdraws();
+                };
+                
+                // 查看提现详情
+                const viewWithdraw = (withdraw) => {
+                    ElementPlus.ElMessage.info('查看提现: ' + withdraw.orderNo);
+                };
+                
+                // 审核通过提现
+                const approveWithdraw = (withdraw) => {
+                    ElementPlus.ElMessageBox.confirm('确定要通过该提现申请吗？', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                        type: 'warning'
+                    }).then(() => {
+                        ElementPlus.ElMessage.success('审核通过');
+                        loadWithdraws();
+                    });
+                };
+                
+                // 拒绝提现
+                const rejectWithdraw = (withdraw) => {
+                    ElementPlus.ElMessageBox.prompt('请输入拒绝原因', '拒绝提现', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消'
+                    }).then(({ value }) => {
+                        ElementPlus.ElMessage.success('已拒绝');
+                        loadWithdraws();
+                    });
+                };
+                
+                // 退出登录
+                const logout = () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('userInfo');
+                    window.location.href = 'login.html';
+                };
+                
+                onMounted(() => {
+                    if (!token) {
+                        window.location.href = 'login.html';
+                    }
+                    loadUsers();
+                });
+                
+                return {
+                    activeMenu,
+                    loading,
+                    userInfo,
+                    statistics,
+                    recentOrders,
+                    userQuery,
+                    userList,
+                    userTotal,
+                    depositQuery,
+                    depositList,
+                    depositTotal,
+                    withdrawQuery,
+                    withdrawList,
+                    withdrawTotal,
+                    handleMenuSelect,
+                    loadUsers,
+                    searchUsers,
+                    resetUserQuery,
+                    viewUser,
+                    editUser,
+                    adjustBalance,
+                    toggleUserStatus,
+                    loadDeposits,
+                    searchDeposits,
+                    resetDepositQuery,
+                    viewDeposit,
+                    confirmDeposit,
+                    loadWithdraws,
+                    searchWithdraws,
+                    resetWithdrawQuery,
+                    viewWithdraw,
+                    approveWithdraw,
+                    rejectWithdraw,
+                    logout
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+        
+        // 注册 Element Plus 图标
+        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+            app.component(key, component);
+        }
+    </script>
+</body>
+</html>
