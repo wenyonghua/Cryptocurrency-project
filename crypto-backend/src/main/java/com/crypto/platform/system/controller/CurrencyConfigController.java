@@ -36,20 +36,20 @@ public class CurrencyConfigController {
     @PostMapping
     public Result<Void> add(@RequestBody CurrencyConfig entity) {
         currencyConfigService.save(entity);
-        return Result.success("新增成功");
+        return Result.success();
     }
 
     @Operation(summary = "更新")
     @PutMapping
     public Result<Void> update(@RequestBody CurrencyConfig entity) {
         currencyConfigService.updateById(entity);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @Operation(summary = "删除")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         currencyConfigService.removeById(id);
-        return Result.success("删除成功");
+        return Result.success();
     }
 }

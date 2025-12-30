@@ -50,7 +50,7 @@ public class SysConfigController {
     public Result<?> update(@RequestBody SysConfig config) {
         boolean success = configService.updateById(config);
         if (success) {
-            return Result.success("更新成功");
+            return Result.success();
         }
         return Result.error("更新失败");
     }
@@ -61,7 +61,7 @@ public class SysConfigController {
     public Result<?> add(@RequestBody SysConfig config) {
         boolean success = configService.save(config);
         if (success) {
-            return Result.success("新增成功");
+            return Result.success();
         }
         return Result.error("新增失败");
     }
@@ -72,7 +72,7 @@ public class SysConfigController {
     public Result<?> delete(@PathVariable Long id) {
         boolean success = configService.removeById(id);
         if (success) {
-            return Result.success("删除成功");
+            return Result.success();
         }
         return Result.error("删除失败");
     }

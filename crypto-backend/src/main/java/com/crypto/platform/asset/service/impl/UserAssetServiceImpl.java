@@ -123,7 +123,6 @@ public class UserAssetServiceImpl extends ServiceImpl<UserAssetMapper, UserAsset
                 .eq(UserAsset::getId, asset.getId())
                 .setSql("frozen = frozen - " + amount + ", available = available + " + amount));
     }
-}
 
     @Override
     @Transactional(rollbackFor = Exception.class)

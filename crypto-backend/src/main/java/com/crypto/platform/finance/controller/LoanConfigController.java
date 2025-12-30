@@ -36,20 +36,20 @@ public class LoanConfigController {
     @PostMapping
     public Result<Void> add(@RequestBody LoanConfig entity) {
         loanConfigService.save(entity);
-        return Result.success("新增成功");
+        return Result.success();
     }
 
     @Operation(summary = "更新")
     @PutMapping
     public Result<Void> update(@RequestBody LoanConfig entity) {
         loanConfigService.updateById(entity);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @Operation(summary = "删除")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         loanConfigService.removeById(id);
-        return Result.success("删除成功");
+        return Result.success();
     }
 }

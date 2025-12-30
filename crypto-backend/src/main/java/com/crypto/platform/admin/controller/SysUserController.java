@@ -50,7 +50,7 @@ public class SysUserController {
     public Result<?> update(@RequestBody SysUser user) {
         boolean success = userService.updateById(user);
         if (success) {
-            return Result.success("更新成功");
+            return Result.success();
         }
         return Result.error("更新失败");
     }
@@ -61,7 +61,7 @@ public class SysUserController {
     public Result<?> delete(@PathVariable Long id) {
         boolean success = userService.removeById(id);
         if (success) {
-            return Result.success("删除成功");
+            return Result.success();
         }
         return Result.error("删除失败");
     }

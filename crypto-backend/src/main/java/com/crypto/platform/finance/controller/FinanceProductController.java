@@ -41,21 +41,21 @@ public class FinanceProductController {
     @PostMapping
     public Result<Void> add(@RequestBody FinanceProduct product) {
         financeProductService.save(product);
-        return Result.success("新增成功");
+        return Result.success();
     }
 
     @Operation(summary = "更新产品")
     @PutMapping
     public Result<Void> update(@RequestBody FinanceProduct product) {
         financeProductService.updateById(product);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @Operation(summary = "删除产品")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         financeProductService.removeById(id);
-        return Result.success("删除成功");
+        return Result.success();
     }
 }
 

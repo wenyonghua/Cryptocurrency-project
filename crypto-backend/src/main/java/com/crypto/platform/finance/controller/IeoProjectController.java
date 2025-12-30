@@ -36,20 +36,20 @@ public class IeoProjectController {
     @PostMapping
     public Result<Void> add(@RequestBody IeoProject entity) {
         ieoProjectService.save(entity);
-        return Result.success("新增成功");
+        return Result.success();
     }
 
     @Operation(summary = "更新")
     @PutMapping
     public Result<Void> update(@RequestBody IeoProject entity) {
         ieoProjectService.updateById(entity);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @Operation(summary = "删除")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         ieoProjectService.removeById(id);
-        return Result.success("删除成功");
+        return Result.success();
     }
 }

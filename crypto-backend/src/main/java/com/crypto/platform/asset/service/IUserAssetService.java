@@ -43,23 +43,22 @@ public interface IUserAssetService extends IService<UserAsset> {
      * 解冻余额
      */
     boolean unfreezeBalance(Long userId, String currency, BigDecimal amount);
-}
 
     /**
      * 增加余额（支持资产类型）
      */
     boolean addBalance(Long userId, String currency, Integer assetType, BigDecimal amount);
-    
+
     /**
      * 减少余额（支持资产类型）
      */
     boolean subtractBalance(Long userId, String currency, Integer assetType, BigDecimal amount);
-    
+
     /**
      * 冻结余额（支持资产类型）
      */
     boolean freezeBalance(Long userId, String currency, Integer assetType, BigDecimal amount);
-    
+
     /**
      * 解冻余额（支持资产类型）
      */

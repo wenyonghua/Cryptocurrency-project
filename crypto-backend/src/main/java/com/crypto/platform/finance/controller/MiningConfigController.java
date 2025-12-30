@@ -36,21 +36,21 @@ public class MiningConfigController {
     @PostMapping
     public Result<Void> add(@RequestBody MiningConfig config) {
         miningConfigService.save(config);
-        return Result.success("新增成功");
+        return Result.success();
     }
 
     @Operation(summary = "更新配置")
     @PutMapping
     public Result<Void> update(@RequestBody MiningConfig config) {
         miningConfigService.updateById(config);
-        return Result.success("更新成功");
+        return Result.success();
     }
 
     @Operation(summary = "删除配置")
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable Long id) {
         miningConfigService.removeById(id);
-        return Result.success("删除成功");
+        return Result.success();
     }
 }
 
