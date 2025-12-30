@@ -1,34 +1,32 @@
 package com.crypto.platform.common.result;
 
-import lombok.Data;
 import java.io.Serializable;
 
 /**
  * 统一返回结果类
- * 
+ *
  * @author crypto-platform
  * @since 2025-12-30
  */
-@Data
 public class Result<T> implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    
+
     /**
      * 状态码
      */
     private Integer code;
-    
+
     /**
      * 返回消息
      */
     private String message;
-    
+
     /**
      * 返回数据
      */
     private T data;
-    
+
     /**
      * 时间戳
      */
@@ -36,6 +34,39 @@ public class Result<T> implements Serializable {
 
     public Result() {
         this.timestamp = System.currentTimeMillis();
+    }
+
+    // Getter and Setter methods
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public T getData() {
+        return data;
+    }
+
+    public void setData(T data) {
+        this.data = data;
+    }
+
+    public Long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(Long timestamp) {
+        this.timestamp = timestamp;
     }
 
     /**
