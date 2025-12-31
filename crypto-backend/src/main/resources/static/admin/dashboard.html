@@ -103,60 +103,28 @@
         <div class="main-container">
             <div class="sidebar">
                 <el-menu :default-active="activeMenu" @select="handleMenuSelect">
-                    <el-menu-item index="dashboard">
-                        <el-icon><DataAnalysis /></el-icon>
-                        <span>数据概览</span>
-                    </el-menu-item>
-                    
-                    <el-sub-menu index="user">
-                        <template #title>
-                            <el-icon><User /></el-icon>
-                            <span>玩家管理</span>
-                        </template>
-                        <el-menu-item index="user-list">玩家用户</el-menu-item>
-                        <el-menu-item index="user-asset">玩家资产</el-menu-item>
-                        <el-menu-item index="user-kyc">实名认证</el-menu-item>
-                    </el-sub-menu>
-                    
-                    <el-sub-menu index="deposit">
-                        <template #title>
-                            <el-icon><Wallet /></el-icon>
-                            <span>充提管理</span>
-                        </template>
-                        <el-menu-item index="deposit-list">充值记录</el-menu-item>
-                        <el-menu-item index="withdraw-list">提现记录</el-menu-item>
-                    </el-sub-menu>
-                    
-                    <el-sub-menu index="trade">
-                        <template #title>
-                            <el-icon><TrendCharts /></el-icon>
-                            <span>交易管理</span>
-                        </template>
-                        <el-menu-item index="spot-order">现货交易</el-menu-item>
-                        <el-menu-item index="seconds-order">秒合约</el-menu-item>
-                        <el-menu-item index="cycle-order">周期合约</el-menu-item>
-                    </el-sub-menu>
-                    
-                    <el-sub-menu index="finance">
-                        <template #title>
-                            <el-icon><Money /></el-icon>
-                            <span>金融产品</span>
-                        </template>
-                        <el-menu-item index="finance-product">理财产品</el-menu-item>
-                        <el-menu-item index="mining-config">挖矿配置</el-menu-item>
-                        <el-menu-item index="loan-config">借贷配置</el-menu-item>
-                        <el-menu-item index="ieo-project">IEO项目</el-menu-item>
-                    </el-sub-menu>
-                    
-                    <el-sub-menu index="system">
-                        <template #title>
-                            <el-icon><Setting /></el-icon>
-                            <span>系统管理</span>
-                        </template>
-                        <el-menu-item index="currency-config">币种配置</el-menu-item>
-                        <el-menu-item index="trading-pair">交易对配置</el-menu-item>
-                        <el-menu-item index="system-config">系统配置</el-menu-item>
-                    </el-sub-menu>
+                    <!-- 动态菜单 -->
+                    <template v-for="menu in menuList" :key="menu.id">
+                        <!-- 有子菜单的一级菜单 -->
+                        <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.key">
+                            <template #title>
+                                <el-icon><component :is="menu.icon" /></el-icon>
+                                <span>{{ menu.name }}</span>
+                            </template>
+                            <el-menu-item
+                                v-for="child in menu.children"
+                                :key="child.id"
+                                :index="child.key">
+                                {{ child.name }}
+                            </el-menu-item>
+                        </el-sub-menu>
+
+                        <!-- 无子菜单的一级菜单 -->
+                        <el-menu-item v-else :index="menu.key">
+                            <el-icon><component :is="menu.icon" /></el-icon>
+                            <span>{{ menu.name }}</span>
+                        </el-menu-item>
+                    </template>
                 </el-menu>
             </div>
             
@@ -445,7 +413,10 @@
                 const loading = ref(false);
                 const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'));
                 const token = localStorage.getItem('token');
-                
+
+                // 菜单数据
+                const menuList = ref([]);
+
                 // 统计数据
                 const statistics = reactive({
                     totalProfit: '1,019,800',
@@ -453,7 +424,7 @@
                     totalDeposit: '1,020,000',
                     totalWithdraw: '200'
                 });
-                
+
                 // 最近订单
                 const recentOrders = ref([]);
                 
@@ -519,41 +490,33 @@
                         return null;
                     }
                 };
-                
+
+                // 加载菜单
+                const loadMenu = async () => {
+                    const result = await apiRequest('/system/menu/tree');
+                    if (result && result.code === 200) {
+                        menuList.value = result.data || [];
+                        console.log('菜单加载成功:', menuList.value);
+                    } else {
+                        console.error('菜单加载失败');
+                    }
+                };
+
                 // 菜单选择
                 const handleMenuSelect = (index) => {
-                    // 需要跳转到独立页面的菜单项
-                    const pageMap = {
-                        'spot-order': 'spot-trade.html',
-                        'seconds-order': 'seconds-contract.html',
-                        'cycle-order': 'cycle-contract.html',
-                        'finance-product': 'finance-product.html',
-                        'mining-config': 'mining-config.html',
-                        'loan-config': 'loan-config.html',
-                        'ieo-project': 'ieo-project.html',
-                        'currency-config': 'currency-config.html',
-                        'trading-pair': 'trading-pair.html',
-                        'system-config': 'system-config.html'
-                    };
-                    
-                    // 如果是需要跳转的页面，直接跳转
-                    if (pageMap[index]) {
-                        window.location.href = pageMap[index];
-                        return;
-                    }
-                    
-                    // 否则切换内部视图
+                    console.log('选择菜单:', index);
+
+                    // 切换菜单
                     activeMenu.value = index;
-                    
-                    // 根据菜单加载对应数据
-                    if (index === 'user-list') {
+
+                    // 根据菜单key加载对应数据
+                    if (index === 'player:user:list') {
                         loadUsers();
                     } else if (index === 'deposit-list') {
                         loadDeposits();
                     } else if (index === 'withdraw-list') {
                         loadWithdraws();
                     }
-
                 };
                 
                 // 加载用户列表
@@ -768,13 +731,15 @@
                     if (!token) {
                         window.location.href = 'login.html';
                     }
+                    loadMenu();  // 加载菜单
                     loadUsers();
                 });
-                
+
                 return {
                     activeMenu,
                     loading,
                     userInfo,
+                    menuList,  // 添加菜单数据
                     statistics,
                     recentOrders,
                     userQuery,
