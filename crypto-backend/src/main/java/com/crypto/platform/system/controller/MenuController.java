@@ -1,6 +1,6 @@
 package com.crypto.platform.system.controller;
 
-import com.crypto.platform.common.Result;
+import com.crypto.platform.common.result.Result;
 import com.crypto.platform.system.dto.MenuTreeDTO;
 import com.crypto.platform.system.service.ISysPermissionService;
 import io.swagger.v3.oas.annotations.Operation;
