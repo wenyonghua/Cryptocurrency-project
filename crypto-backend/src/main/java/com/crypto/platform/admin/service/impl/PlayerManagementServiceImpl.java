@@ -55,8 +55,8 @@ public class PlayerManagementServiceImpl implements IPlayerManagementService {
         dto.setRealName(user.getRealName());
         dto.setInviteCode(user.getInviteCode());
         dto.setInviterId(user.getInviterId());
-        dto.setLastLoginTime(user.getLastLoginTime());
-        dto.setLastLoginIp(user.getLastLoginIp());
+        dto.setLastLoginTime(user.getLoginTime());
+        dto.setLastLoginIp(user.getLoginIp());
         dto.setCreateTime(user.getCreateTime());
         
         // 获取邀请人信息
