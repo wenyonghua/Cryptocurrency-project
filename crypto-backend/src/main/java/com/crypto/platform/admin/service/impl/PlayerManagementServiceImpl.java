@@ -1,6 +1,8 @@
 package com.crypto.platform.admin.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.crypto.platform.admin.dto.AssetAdjustmentDTO;
 import com.crypto.platform.admin.dto.PlayerDetailDTO;
 import com.crypto.platform.admin.entity.SysUser;
 import com.crypto.platform.admin.mapper.SysUserMapper;
@@ -13,8 +15,11 @@ import com.crypto.platform.withdraw.entity.WithdrawOrder;
 import com.crypto.platform.withdraw.mapper.WithdrawOrderMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -135,6 +140,122 @@ public class PlayerManagementServiceImpl implements IPlayerManagementService {
         user.setId(userId);
         user.setVipLevel(vipLevel);
         return sysUserMapper.updateById(user) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean adjustPlayerAsset(AssetAdjustmentDTO dto) {
+        // 查询用户资产
+        UserAsset asset = userAssetMapper.selectOne(
+            new LambdaQueryWrapper<UserAsset>()
+                .eq(UserAsset::getUserId, dto.getUserId())
+                .eq(UserAsset::getCurrency, dto.getCurrency())
+        );
+
+        if (asset == null) {
+            // 如果资产不存在，创建新资产
+            asset = new UserAsset();
+            asset.setUserId(dto.getUserId());
+            asset.setCurrency(dto.getCurrency());
+            asset.setAvailableBalance(BigDecimal.ZERO);
+            asset.setFrozenBalance(BigDecimal.ZERO);
+            userAssetMapper.insert(asset);
+        }
+
+        // 调整资产
+        BigDecimal newBalance;
+        if (dto.getAdjustType() == 1) {
+            // 充值：增加可用余额
+            newBalance = asset.getAvailableBalance().add(dto.getAmount());
+        } else {
+            // 扣除：减少可用余额
+            newBalance = asset.getAvailableBalance().subtract(dto.getAmount());
+            if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
+                throw new RuntimeException("余额不足，无法扣除");
+            }
+        }
+
+        asset.setAvailableBalance(newBalance);
+        return userAssetMapper.updateById(asset) > 0;
+    }
+
+    @Override
+    public boolean updateDepositWithdrawStatus(Long userId, boolean forbidden) {
+        // 使用 tags 字段存储禁止充值提现的标记
+        SysUser user = sysUserMapper.selectById(userId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+
+        String tags = user.getTags() == null ? "" : user.getTags();
+        if (forbidden) {
+            // 添加禁止标记
+            if (!tags.contains("FORBIDDEN_DEPOSIT_WITHDRAW")) {
+                tags = tags.isEmpty() ? "FORBIDDEN_DEPOSIT_WITHDRAW" : tags + ",FORBIDDEN_DEPOSIT_WITHDRAW";
+            }
+        } else {
+            // 移除禁止标记
+            tags = tags.replace("FORBIDDEN_DEPOSIT_WITHDRAW", "").replace(",,", ",");
+            if (tags.startsWith(",")) tags = tags.substring(1);
+            if (tags.endsWith(",")) tags = tags.substring(0, tags.length() - 1);
+        }
+
+        SysUser updateUser = new SysUser();
+        updateUser.setId(userId);
+        updateUser.setTags(tags);
+        return sysUserMapper.updateById(updateUser) > 0;
+    }
+
+    @Override
+    public List<SysUser> getAgentChain(Long userId) {
+        List<SysUser> agentChain = new ArrayList<>();
+        SysUser currentUser = sysUserMapper.selectById(userId);
+
+        // 最多查找两级上级代理
+        int maxLevel = 2;
+        int currentLevel = 0;
+
+        while (currentUser != null && currentUser.getAgentId() != null && currentLevel < maxLevel) {
+            SysUser agent = sysUserMapper.selectById(currentUser.getAgentId());
+            if (agent != null) {
+                agentChain.add(agent);
+                currentUser = agent;
+                currentLevel++;
+            } else {
+                break;
+            }
+        }
+
+        return agentChain;
+    }
+
+    @Override
+    public boolean updatePlayerInfo(SysUser user) {
+        return sysUserMapper.updateById(user) > 0;
+    }
+
+    @Override
+    public Page<SysUser> getPlayerList(Integer page, Integer size, String username, String phone, String email) {
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+
+        // 只查询普通用户（user_type = 0）
+        wrapper.eq(SysUser::getUserType, 0);
+
+        // 模糊查询条件
+        if (StringUtils.hasText(username)) {
+            wrapper.like(SysUser::getUsername, username);
+        }
+        if (StringUtils.hasText(phone)) {
+            wrapper.like(SysUser::getPhone, phone);
+        }
+        if (StringUtils.hasText(email)) {
+            wrapper.like(SysUser::getEmail, email);
+        }
+
+        // 按创建时间倒序
+        wrapper.orderByDesc(SysUser::getCreateTime);
+
+        return sysUserMapper.selectPage(new Page<>(page, size), wrapper);
     }
 }
 
