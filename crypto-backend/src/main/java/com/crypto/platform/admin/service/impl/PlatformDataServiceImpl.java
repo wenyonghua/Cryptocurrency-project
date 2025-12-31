@@ -195,8 +195,8 @@ public class PlatformDataServiceImpl implements IPlatformDataService {
             dto.setVipLevel(user.getVipLevel());
             dto.setKycLevel(user.getKycLevel());
             dto.setStatus(user.getStatus());
-            dto.setLastLoginTime(user.getLastLoginTime());
-            dto.setLastLoginIp(user.getLastLoginIp());
+            dto.setLastLoginTime(user.getLoginTime());
+            dto.setLastLoginIp(user.getLoginIp());
             dto.setCreateTime(user.getCreateTime());
 
             // 计算总资产（USDT）
