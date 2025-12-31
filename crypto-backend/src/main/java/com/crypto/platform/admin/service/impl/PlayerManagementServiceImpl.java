@@ -236,11 +236,34 @@ public class PlayerManagementServiceImpl implements IPlayerManagementService {
     }
 
     @Override
-    public Page<SysUser> getPlayerList(Integer page, Integer size, String username, String phone, String email) {
+    public Page<SysUser> getPlayerList(Integer page, Integer size, Long userId, String username,
+                                       String phone, String email, Integer userType,
+                                       String walletAddress, Integer status, Long agentId,
+                                       String registerDomain) {
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
 
-        // 只查询普通用户（user_type = 0）
-        wrapper.eq(SysUser::getUserType, 0);
+        // 精确查询条件
+        if (userId != null) {
+            wrapper.eq(SysUser::getId, userId);
+        }
+
+        // 用户类型查询（如果不指定，默认只查询普通用户）
+        if (userType != null) {
+            wrapper.eq(SysUser::getUserType, userType);
+        } else {
+            // 默认只查询普通用户（user_type = 0）
+            wrapper.eq(SysUser::getUserType, 0);
+        }
+
+        // 状态查询
+        if (status != null) {
+            wrapper.eq(SysUser::getStatus, status);
+        }
+
+        // 代理ID查询
+        if (agentId != null) {
+            wrapper.eq(SysUser::getAgentId, agentId);
+        }
 
         // 模糊查询条件
         if (StringUtils.hasText(username)) {
@@ -251,6 +274,12 @@ public class PlayerManagementServiceImpl implements IPlayerManagementService {
         }
         if (StringUtils.hasText(email)) {
             wrapper.like(SysUser::getEmail, email);
+        }
+        if (StringUtils.hasText(walletAddress)) {
+            wrapper.like(SysUser::getWalletAddress, walletAddress);
+        }
+        if (StringUtils.hasText(registerDomain)) {
+            wrapper.like(SysUser::getRegisterDomain, registerDomain);
         }
 
         // 按创建时间倒序

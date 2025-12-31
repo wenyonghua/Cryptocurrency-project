@@ -29,7 +29,7 @@ public class PlayerManagementController {
     
     private final IPlayerManagementService playerManagementService;
 
-    @Operation(summary = "玩家列表", description = "分页查询玩家列表（只包括普通用户）")
+    @Operation(summary = "玩家列表", description = "分页查询玩家列表（支持多条件搜索）")
     @GetMapping("/list")
     @PreAuthorize("hasAuthority('ADMIN')")
     public Result<Page<SysUser>> getPlayerList(
@@ -39,16 +39,37 @@ public class PlayerManagementController {
             @Parameter(description = "每页大小", example = "10")
             @RequestParam(defaultValue = "10") Integer size,
 
-            @Parameter(description = "用户名（模糊查询）")
+            @Parameter(description = "用户ID（精确查询）", example = "1")
+            @RequestParam(required = false) Long userId,
+
+            @Parameter(description = "用户名/登录名（模糊查询）", example = "test")
             @RequestParam(required = false) String username,
 
-            @Parameter(description = "手机号（模糊查询）")
+            @Parameter(description = "手机号（模糊查询）", example = "138")
             @RequestParam(required = false) String phone,
 
-            @Parameter(description = "邮箱（模糊查询）")
-            @RequestParam(required = false) String email
+            @Parameter(description = "邮箱（模糊查询）", example = "@gmail")
+            @RequestParam(required = false) String email,
+
+            @Parameter(description = "用户类型：0-普通用户，1-管理员", example = "0")
+            @RequestParam(required = false) Integer userType,
+
+            @Parameter(description = "钱包地址/地址（模糊查询）", example = "0x")
+            @RequestParam(required = false) String walletAddress,
+
+            @Parameter(description = "冻结状态：0-禁用，1-正常", example = "1")
+            @RequestParam(required = false) Integer status,
+
+            @Parameter(description = "代理ID（玩家代理）", example = "100")
+            @RequestParam(required = false) Long agentId,
+
+            @Parameter(description = "注册域名（模糊查询）", example = "example.com")
+            @RequestParam(required = false) String registerDomain
     ) {
-        Page<SysUser> playerPage = playerManagementService.getPlayerList(page, size, username, phone, email);
+        Page<SysUser> playerPage = playerManagementService.getPlayerList(
+            page, size, userId, username, phone, email,
+            userType, walletAddress, status, agentId, registerDomain
+        );
         return Result.success(playerPage);
     }
 

@@ -79,11 +79,20 @@ public interface IPlayerManagementService {
      *
      * @param page 页码
      * @param size 每页大小
+     * @param userId 用户ID（精确查询）
      * @param username 用户名（模糊查询）
      * @param phone 手机号（模糊查询）
      * @param email 邮箱（模糊查询）
+     * @param userType 用户类型
+     * @param walletAddress 钱包地址（模糊查询）
+     * @param status 冻结状态：0-禁用，1-正常
+     * @param agentId 代理ID
+     * @param registerDomain 注册域名（模糊查询）
      * @return 玩家列表
      */
-    Page<SysUser> getPlayerList(Integer page, Integer size, String username, String phone, String email);
+    Page<SysUser> getPlayerList(Integer page, Integer size, Long userId, String username,
+                                String phone, String email, Integer userType,
+                                String walletAddress, Integer status, Long agentId,
+                                String registerDomain);
 }
 
