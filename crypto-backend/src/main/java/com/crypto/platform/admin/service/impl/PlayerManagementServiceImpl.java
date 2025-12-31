@@ -157,8 +157,9 @@ public class PlayerManagementServiceImpl implements IPlayerManagementService {
             asset = new UserAsset();
             asset.setUserId(dto.getUserId());
             asset.setCurrency(dto.getCurrency());
-            asset.setAvailableBalance(BigDecimal.ZERO);
-            asset.setFrozenBalance(BigDecimal.ZERO);
+            asset.setAvailable(BigDecimal.ZERO);
+            asset.setFrozen(BigDecimal.ZERO);
+            asset.setAssetType(1); // 默认为平台资产
             userAssetMapper.insert(asset);
         }
 
@@ -166,16 +167,16 @@ public class PlayerManagementServiceImpl implements IPlayerManagementService {
         BigDecimal newBalance;
         if (dto.getAdjustType() == 1) {
             // 充值：增加可用余额
-            newBalance = asset.getAvailableBalance().add(dto.getAmount());
+            newBalance = asset.getAvailable().add(dto.getAmount());
         } else {
             // 扣除：减少可用余额
-            newBalance = asset.getAvailableBalance().subtract(dto.getAmount());
+            newBalance = asset.getAvailable().subtract(dto.getAmount());
             if (newBalance.compareTo(BigDecimal.ZERO) < 0) {
                 throw new RuntimeException("余额不足，无法扣除");
             }
         }
 
-        asset.setAvailableBalance(newBalance);
+        asset.setAvailable(newBalance);
         return userAssetMapper.updateById(asset) > 0;
     }
 
