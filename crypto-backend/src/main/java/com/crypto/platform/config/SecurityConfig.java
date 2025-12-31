@@ -60,6 +60,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 允许访问的路径
                 .requestMatchers(
+                    "/",                  // 根路径
                     "/auth/**",           // 认证接口
                     "/admin/**",          // 管理后台静态资源
                     "/doc.html",          // Knife4j 文档
