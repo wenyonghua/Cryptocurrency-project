@@ -26,7 +26,7 @@ public class SysUserController {
 
     @Operation(summary = "用户列表", description = "分页查询用户列表")
     @GetMapping("/list")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<Page<SysUser>> list(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
@@ -46,7 +46,7 @@ public class SysUserController {
 
     @Operation(summary = "更新用户", description = "更新用户信息")
     @PutMapping
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<?> update(@RequestBody SysUser user) {
         boolean success = userService.updateById(user);
         if (success) {
@@ -57,7 +57,7 @@ public class SysUserController {
 
     @Operation(summary = "删除用户", description = "根据ID删除用户（逻辑删除）")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<?> delete(@PathVariable Long id) {
         boolean success = userService.removeById(id);
         if (success) {
@@ -68,7 +68,7 @@ public class SysUserController {
 
     @Operation(summary = "启用/禁用用户", description = "修改用户状态")
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<?> updateStatus(@PathVariable Long id, @RequestParam Integer status) {
         SysUser user = new SysUser();
         user.setId(id);

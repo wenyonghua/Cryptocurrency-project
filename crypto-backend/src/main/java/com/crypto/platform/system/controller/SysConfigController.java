@@ -26,7 +26,7 @@ public class SysConfigController {
 
     @Operation(summary = "配置列表", description = "分页查询配置列表")
     @GetMapping("/list")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<Page<SysConfig>> list(
             @RequestParam(defaultValue = "1") Integer page,
             @RequestParam(defaultValue = "10") Integer size) {
@@ -46,7 +46,7 @@ public class SysConfigController {
 
     @Operation(summary = "更新配置", description = "更新配置信息")
     @PutMapping
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<?> update(@RequestBody SysConfig config) {
         boolean success = configService.updateById(config);
         if (success) {
@@ -57,7 +57,7 @@ public class SysConfigController {
 
     @Operation(summary = "新增配置", description = "新增配置")
     @PostMapping
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<?> add(@RequestBody SysConfig config) {
         boolean success = configService.save(config);
         if (success) {
@@ -68,7 +68,7 @@ public class SysConfigController {
 
     @Operation(summary = "删除配置", description = "根据ID删除配置")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('admin')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     public Result<?> delete(@PathVariable Long id) {
         boolean success = configService.removeById(id);
         if (success) {
