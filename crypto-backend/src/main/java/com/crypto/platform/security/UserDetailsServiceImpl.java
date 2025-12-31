@@ -35,9 +35,9 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         // 构建权限列表
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
         if (user.getUserType() != null && user.getUserType() == 1) {
-            authorities.add(new SimpleGrantedAuthority("admin"));
+            authorities.add(new SimpleGrantedAuthority("ADMIN"));
         } else {
-            authorities.add(new SimpleGrantedAuthority("user"));
+            authorities.add(new SimpleGrantedAuthority("USER"));
         }
 
         return User.builder()

@@ -49,7 +49,7 @@ public class AuthController {
 
             // 获取用户信息
             SysUser user = userService.getUserByUsername(request.getUsername());
-            
+
             // 生成 Token
             String token = tokenProvider.generateToken(user.getUsername(), user.getId());
 
@@ -60,7 +60,8 @@ public class AuthController {
 
             return Result.success("登录成功", data);
         } catch (Exception e) {
-            return Result.error("用户名或密码错误");
+            e.printStackTrace(); // 打印详细错误信息
+            return Result.error("用户名或密码错误: " + e.getMessage());
         }
     }
 
