@@ -1,5 +1,7 @@
 package com.crypto.platform.asset.controller;
 
+import com.crypto.platform.admin.entity.SysUser;
+import com.crypto.platform.admin.service.ISysUserService;
 import com.crypto.platform.asset.entity.UserAsset;
 import com.crypto.platform.asset.service.IUserAssetService;
 import com.crypto.platform.common.result.Result;
@@ -25,34 +27,34 @@ import java.util.List;
 public class UserAssetController {
 
     private final IUserAssetService assetService;
+    private final ISysUserService userService;
 
     @Operation(summary = "获取当前用户资产列表", description = "获取当前登录用户的所有资产")
     @GetMapping("/list")
     public Result<List<UserAsset>> getMyAssets() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
             return Result.error("未登录");
         }
-        
-        // TODO: 从用户信息中获取userId，这里暂时返回空列表
-        // Long userId = getCurrentUserId();
-        // List<UserAsset> assets = assetService.getAssetsByUserId(userId);
-        
-        return Result.success(List.of());
+        return Result.success(assetService.getAssetsByUserId(userId));
     }
 
     @Operation(summary = "获取指定币种资产", description = "获取当前用户指定币种的资产信息")
     @GetMapping("/{currency}")
     public Result<UserAsset> getAssetByCurrency(@PathVariable String currency) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
+        Long userId = getCurrentUserId();
+        if (userId == null) {
             return Result.error("未登录");
         }
-        
-        // TODO: 从用户信息中获取userId
-        // Long userId = getCurrentUserId();
-        // UserAsset asset = assetService.getAssetByUserIdAndCurrency(userId, currency);
-        
-        return Result.success(new UserAsset());
+        return Result.success(assetService.getAssetByUserIdAndCurrency(userId, currency));
+    }
+
+    private Long getCurrentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return null;
+        }
+        SysUser user = userService.getUserByUsername(authentication.getName());
+        return user != null ? user.getId() : null;
     }
 }

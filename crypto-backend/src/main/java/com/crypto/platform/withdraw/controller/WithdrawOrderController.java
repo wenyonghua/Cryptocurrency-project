@@ -58,7 +58,7 @@ public class WithdrawOrderController {
         // TODO: 从当前登录用户获取 auditorId
         Long auditorId = 1L;
         boolean success = withdrawOrderService.reject(id, auditorId, reason);
-        return success ? Result.error("审核失败") : Result.success();
+        return success ? Result.success() : Result.error("审核失败");
     }
 }
 

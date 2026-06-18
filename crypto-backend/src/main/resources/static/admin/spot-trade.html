@@ -70,17 +70,17 @@
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
                     <el-table-column prop="orderNo" label="订单号" width="180"></el-table-column>
                     <el-table-column prop="userId" label="用户ID" width="100"></el-table-column>
-                    <el-table-column prop="tradingPair" label="交易对" width="120"></el-table-column>
-                    <el-table-column prop="orderType" label="交易类型" width="100">
+                    <el-table-column prop="symbol" label="交易对" width="120"></el-table-column>
+                    <el-table-column prop="side" label="方向" width="100">
                         <template #default="scope">
-                            <el-tag :type="scope.row.orderType === 1 ? 'success' : 'danger'">
-                                {{ scope.row.orderType === 1 ? '买入' : '卖出' }}
+                            <el-tag :type="scope.row.side === 1 ? 'success' : 'danger'">
+                                {{ scope.row.side === 1 ? '买入' : '卖出' }}
                             </el-tag>
                         </template>
                     </el-table-column>
                     <el-table-column prop="price" label="价格" width="120"></el-table-column>
                     <el-table-column prop="amount" label="数量" width="120"></el-table-column>
-                    <el-table-column prop="totalAmount" label="总金额" width="120"></el-table-column>
+                    <el-table-column prop="total" label="总金额" width="120"></el-table-column>
                     <el-table-column prop="filledAmount" label="已成交数量" width="120"></el-table-column>
                     <el-table-column prop="status" label="状态" width="100">
                         <template #default="scope">
@@ -141,88 +141,46 @@
 
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="admin-common.js"></script>
     <script>
         const { createApp, ref, reactive, onMounted } = Vue;
-
-        
         createApp({
             setup() {
                 const loading = ref(false);
                 const detailVisible = ref(false);
                 const currentRow = ref(null);
-                
-                const searchForm = reactive({
-                    orderNo: '',
-                    userId: '',
-                    tradingPair: '',
-                    orderType: '',
-                    status: ''
-                });
-                
-                const pagination = reactive({
-                    page: 1,
-                    size: 10,
-                    total: 0
-                });
-                
+                const searchForm = reactive({ orderNo: '', userId: '', symbol: '', side: '', status: '' });
+                const pagination = reactive({ page: 1, size: 10, total: 0 });
                 const tableData = ref([]);
-                
-                // 模拟数据
-                const mockData = [
-                    { id: 1, orderNo: 'SPOT202512300001', userId: 1001, tradingPair: 'BTC/USDT', orderType: 1, price: '42,500.00', amount: '0.5', totalAmount: '21,250.00', filledAmount: '0.5', fee: '21.25', status: 2, createTime: '2025-12-30 10:30:00', updateTime: '2025-12-30 10:30:15' },
-                    { id: 2, orderNo: 'SPOT202512300002', userId: 1002, tradingPair: 'ETH/USDT', orderType: 2, price: '2,250.00', amount: '2.0', totalAmount: '4,500.00', filledAmount: '1.0', fee: '4.50', status: 1, createTime: '2025-12-30 11:15:00', updateTime: '2025-12-30 11:20:00' },
-                    { id: 3, orderNo: 'SPOT202512300003', userId: 1003, tradingPair: 'BNB/USDT', orderType: 1, price: '310.00', amount: '10.0', totalAmount: '3,100.00', filledAmount: '0.0', fee: '0.00', status: 0, createTime: '2025-12-30 12:00:00', updateTime: '2025-12-30 12:00:00' },
-                    { id: 4, orderNo: 'SPOT202512300004', userId: 1004, tradingPair: 'BTC/USDT', orderType: 2, price: '42,800.00', amount: '0.3', totalAmount: '12,840.00', filledAmount: '0.0', fee: '0.00', status: 3, createTime: '2025-12-30 13:30:00', updateTime: '2025-12-30 13:35:00' },
-                    { id: 5, orderNo: 'SPOT202512300005', userId: 1005, tradingPair: 'ETH/USDT', orderType: 1, price: '2,260.00', amount: '5.0', totalAmount: '11,300.00', filledAmount: '5.0', fee: '11.30', status: 2, createTime: '2025-12-30 14:00:00', updateTime: '2025-12-30 14:00:30' }
-                ];
-                
-                const loadData = () => {
+
+                const loadData = async () => {
                     loading.value = true;
-                    setTimeout(() => {
-                        tableData.value = mockData;
-                        pagination.total = mockData.length;
-                        loading.value = false;
-                    }, 500);
+                    const query = {};
+                    Object.entries(searchForm).forEach(([k, v]) => { if (v !== '') query[k] = v; });
+                    const data = await AdminAPI.getPage('/admin/spot/list', query, pagination.page, pagination.size);
+                    tableData.value = data.records;
+                    pagination.total = data.total;
+                    loading.value = false;
                 };
-                
-                const handleSearch = () => { loadData(); };
-                const handleReset = () => {
-                    Object.keys(searchForm).forEach(key => searchForm[key] = '');
-                    loadData();
-                };
+
+                const handleSearch = () => { pagination.page = 1; loadData(); };
+                const handleReset = () => { Object.keys(searchForm).forEach(k => searchForm[k] = ''); loadData(); };
                 const handleSizeChange = (size) => { pagination.size = size; loadData(); };
                 const handleCurrentChange = (page) => { pagination.page = page; loadData(); };
                 const handleView = (row) => { currentRow.value = row; detailVisible.value = true; };
                 const handleCancel = (row) => {
-                    ElementPlus.ElMessageBox.confirm('确定要撤销该订单吗？', '提示', {
-                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
-                    }).then(() => {
-                        ElementPlus.ElMessage.success('撤单成功');
-                        loadData();
+                    ElementPlus.ElMessageBox.confirm('确定要撤销该订单吗？', '提示', { type: 'warning' }).then(async () => {
+                        const result = await AdminAPI.request(`/admin/spot/cancel/${row.orderNo}`, { method: 'POST' });
+                        if (result && result.code === 200) { ElementPlus.ElMessage.success('撤单成功'); loadData(); }
                     }).catch(() => {});
                 };
-                const getStatusType = (status) => {
-                    const types = { 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' };
-                    return types[status] || 'info';
-                };
-                const getStatusText = (status) => {
-                    const texts = { 0: '待成交', 1: '部分成交', 2: '完全成交', 3: '已取消' };
-                    return texts[status] || '未知';
-                };
-                const goBack = () => { window.location.href = 'dashboard.html'; };
-                const logout = () => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userInfo');
-                    window.location.href = 'login.html';
-                };
-                
-                onMounted(() => { loadData(); });
-                
-                return {
-                    loading, detailVisible, currentRow, searchForm, pagination, tableData,
-                    handleSearch, handleReset, handleSizeChange, handleCurrentChange,
-                    handleView, handleCancel, getStatusType, getStatusText, goBack, logout
-                };
+                const getStatusType = (s) => ({ 0: 'info', 1: 'warning', 2: 'success', 3: 'danger' }[s] || 'info');
+                const getStatusText = (s) => ({ 0: '待成交', 1: '部分成交', 2: '完全成交', 3: '已撤销', 4: '已过期' }[s] || '未知');
+                const goBack = () => AdminAPI.goBack();
+                const logout = () => AdminAPI.logout();
+
+                onMounted(() => { if (AdminAPI.checkAuth()) loadData(); });
+                return { loading, detailVisible, currentRow, searchForm, pagination, tableData, handleSearch, handleReset, handleSizeChange, handleCurrentChange, handleView, handleCancel, getStatusType, getStatusText, goBack, logout };
             }
         }).use(ElementPlus).mount('#app');
     </script>

@@ -19,7 +19,7 @@
 <body>
     <div id="app" class="layout-container">
         <div class="header">
-            <div class="header-title">💎 交易对配置管理</div>
+            <div class="header-title">💱 交易对配置管理</div>
             <div>
                 <el-button type="primary" size="small" @click="goBack">返回主页</el-button>
                 <el-button type="danger" size="small" @click="logout">退出登录</el-button>
@@ -34,43 +34,22 @@
             <div class="table-container">
                 <el-table :data="tableData" border stripe v-loading="loading">
                     <el-table-column prop="id" label="ID" width="80"></el-table-column>
-                    <el-table-column prop="currencyCode" label="交易对代码" width="120"></el-table-column>
-                    <el-table-column prop="currencyName" label="交易对名称" width="150"></el-table-column>
-                    <el-table-column prop="icon" label="图标" width="80">
-                        <template #default="scope">
-                            <img :src="scope.row.icon" style="width: 32px; height: 32px;" />
-                        </template>
-                    </el-table-column>
-                    <el-table-column prop="withdrawFee" label="提现手续费" width="120"></el-table-column>
-                    <el-table-column prop="minWithdraw" label="最小提现" width="120"></el-table-column>
-                    <el-table-column prop="maxWithdraw" label="最大提现" width="120"></el-table-column>
-                    <el-table-column prop="canDeposit" label="可充值" width="100">
-                        <template #default="scope">
-                            <el-tag :type="scope.row.canDeposit ? 'success' : 'danger'">
-                                {{ scope.row.canDeposit ? '是' : '否' }}
-                            </el-tag>
-                        </template>
-                    </el-table-column>
-                    <el-table-column prop="canWithdraw" label="可提现" width="100">
-                        <template #default="scope">
-                            <el-tag :type="scope.row.canWithdraw ? 'success' : 'danger'">
-                                {{ scope.row.canWithdraw ? '是' : '否' }}
-                            </el-tag>
-                        </template>
-                    </el-table-column>
-                    <el-table-column prop="status" label="状态" width="100">
+                    <el-table-column prop="symbol" label="交易对" width="140"></el-table-column>
+                    <el-table-column prop="baseCurrency" label="基础币" width="100"></el-table-column>
+                    <el-table-column prop="quoteCurrency" label="计价币" width="100"></el-table-column>
+                    <el-table-column prop="minAmount" label="最小数量" width="120"></el-table-column>
+                    <el-table-column prop="makerFee" label="Maker费率" width="110"></el-table-column>
+                    <el-table-column prop="takerFee" label="Taker费率" width="110"></el-table-column>
+                    <el-table-column prop="status" label="状态" width="90">
                         <template #default="scope">
                             <el-tag :type="scope.row.status === 1 ? 'success' : 'danger'">
                                 {{ scope.row.status === 1 ? '启用' : '禁用' }}
                             </el-tag>
                         </template>
                     </el-table-column>
-                    <el-table-column label="操作" width="250" fixed="right">
+                    <el-table-column label="操作" width="180" fixed="right">
                         <template #default="scope">
                             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-                            <el-button size="small" type="warning" @click="handleToggleStatus(scope.row)">
-                                {{ scope.row.status === 1 ? '禁用' : '启用' }}
-                            </el-button>
                             <el-button size="small" type="danger" @click="handleDelete(scope.row)">删除</el-button>
                         </template>
                     </el-table-column>
@@ -91,29 +70,23 @@
 
         <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
             <el-form :model="formData" label-width="120px">
-                <el-form-item label="交易对代码">
-                    <el-input v-model="formData.currencyCode" placeholder="如：BTC"></el-input>
+                <el-form-item label="交易对">
+                    <el-input v-model="formData.symbol" placeholder="如：BTC/USDT"></el-input>
                 </el-form-item>
-                <el-form-item label="交易对名称">
-                    <el-input v-model="formData.currencyName" placeholder="如：比特币"></el-input>
+                <el-form-item label="基础币">
+                    <el-input v-model="formData.baseCurrency" placeholder="如：BTC"></el-input>
                 </el-form-item>
-                <el-form-item label="图标URL">
-                    <el-input v-model="formData.icon" placeholder="请输入图标URL"></el-input>
+                <el-form-item label="计价币">
+                    <el-input v-model="formData.quoteCurrency" placeholder="如：USDT"></el-input>
                 </el-form-item>
-                <el-form-item label="提现手续费">
-                    <el-input v-model="formData.withdrawFee" placeholder="请输入提现手续费"></el-input>
+                <el-form-item label="最小数量">
+                    <el-input v-model="formData.minAmount" placeholder="请输入最小数量"></el-input>
                 </el-form-item>
-                <el-form-item label="最小提现">
-                    <el-input v-model="formData.minWithdraw" placeholder="请输入最小提现金额"></el-input>
+                <el-form-item label="Maker费率">
+                    <el-input v-model="formData.makerFee" placeholder="请输入Maker费率"></el-input>
                 </el-form-item>
-                <el-form-item label="最大提现">
-                    <el-input v-model="formData.maxWithdraw" placeholder="请输入最大提现金额"></el-input>
-                </el-form-item>
-                <el-form-item label="可充值">
-                    <el-switch v-model="formData.canDeposit"></el-switch>
-                </el-form-item>
-                <el-form-item label="可提现">
-                    <el-switch v-model="formData.canWithdraw"></el-switch>
+                <el-form-item label="Taker费率">
+                    <el-input v-model="formData.takerFee" placeholder="请输入Taker费率"></el-input>
                 </el-form-item>
                 <el-form-item label="状态">
                     <el-radio-group v-model="formData.status">
@@ -131,93 +104,81 @@
 
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="admin-common.js"></script>
     <script>
         const { createApp, ref, reactive, onMounted } = Vue;
-        
         createApp({
             setup() {
                 const loading = ref(false);
                 const dialogVisible = ref(false);
                 const dialogTitle = ref('新增交易对');
+                const isEdit = ref(false);
                 const pagination = reactive({ page: 1, size: 10, total: 0 });
                 const tableData = ref([]);
                 const formData = reactive({
-                    currencyCode: '', currencyName: '', icon: '', withdrawFee: '',
-                    minWithdraw: '', maxWithdraw: '', canDeposit: true, canWithdraw: true, status: 1
+                    id: null, symbol: '', baseCurrency: '', quoteCurrency: '', minAmount: '', makerFee: '', takerFee: '', status: 1
                 });
-                
-                const mockData = [
-                    { id: 1, currencyCode: 'BTC', currencyName: '比特币', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', withdrawFee: '0.0005', minWithdraw: '0.001', maxWithdraw: '10', canDeposit: true, canWithdraw: true, status: 1 },
-                    { id: 2, currencyCode: 'ETH', currencyName: '以太坊', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.png', withdrawFee: '0.005', minWithdraw: '0.01', maxWithdraw: '100', canDeposit: true, canWithdraw: true, status: 1 },
-                    { id: 3, currencyCode: 'USDT', currencyName: '泰达币', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.png', withdrawFee: '1', minWithdraw: '10', maxWithdraw: '100000', canDeposit: true, canWithdraw: true, status: 1 }
-                ];
 
-                
-                const loadData = () => {
+                const loadData = async () => {
                     loading.value = true;
-                    setTimeout(() => {
-                        tableData.value = mockData;
-                        pagination.total = mockData.length;
-                        loading.value = false;
-                    }, 500);
+                    const data = await AdminAPI.getPage('/admin/trading-pair/list', {}, pagination.page, pagination.size);
+                    tableData.value = data.records;
+                    pagination.total = data.total;
+                    loading.value = false;
                 };
-                
+
+                const resetForm = () => {
+                    Object.assign(formData, { id: null, symbol: '', baseCurrency: '', quoteCurrency: '', minAmount: '', makerFee: '', takerFee: '', status: 1 });
+                };
+
                 const handleAdd = () => {
                     dialogTitle.value = '新增交易对';
-                    Object.keys(formData).forEach(key => {
-                        if (key === 'status') formData[key] = 1;
-                        else if (key === 'canDeposit' || key === 'canWithdraw') formData[key] = true;
-                        else formData[key] = '';
-                    });
+                    isEdit.value = false;
+                    resetForm();
                     dialogVisible.value = true;
                 };
-                
+
                 const handleEdit = (row) => {
                     dialogTitle.value = '编辑交易对';
+                    isEdit.value = true;
                     Object.assign(formData, row);
                     dialogVisible.value = true;
                 };
-                
-                const handleSubmit = () => {
-                    ElementPlus.ElMessage.success('保存成功');
-                    dialogVisible.value = false;
-                    loadData();
-                };
-                
-                const handleToggleStatus = (row) => {
-                    const action = row.status === 1 ? '禁用' : '启用';
-                    ElementPlus.ElMessageBox.confirm(`确定要${action}该交易对吗？`, '提示', {
-                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
-                    }).then(() => {
-                        ElementPlus.ElMessage.success(`${action}成功`);
+
+                const handleSubmit = async () => {
+                    const method = isEdit.value ? 'PUT' : 'POST';
+                    const result = await AdminAPI.request('/admin/trading-pair', { method, body: JSON.stringify({ ...formData }) });
+                    if (result && result.code === 200) {
+                        ElementPlus.ElMessage.success('保存成功');
+                        dialogVisible.value = false;
                         loadData();
-                    }).catch(() => {});
+                    } else if (result) {
+                        ElementPlus.ElMessage.error(result.message || '保存失败');
+                    }
                 };
-                
+
                 const handleDelete = (row) => {
-                    ElementPlus.ElMessageBox.confirm('确定要删除该交易对吗？', '提示', {
-                        confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning'
-                    }).then(() => {
-                        ElementPlus.ElMessage.success('删除成功');
-                        loadData();
-                    }).catch(() => {});
+                    ElementPlus.ElMessageBox.confirm('确定要删除该交易对吗？', '提示', { type: 'warning' })
+                        .then(async () => {
+                            const result = await AdminAPI.request('/admin/trading-pair', { method: 'DELETE', body: JSON.stringify({ id: row.id }) });
+                            if (result && result.code === 200) {
+                                ElementPlus.ElMessage.success('删除成功');
+                                loadData();
+                            } else if (result) {
+                                ElementPlus.ElMessage.error(result.message || '删除失败');
+                            }
+                        }).catch(() => {});
                 };
-                
+
                 const handleSizeChange = (size) => { pagination.size = size; loadData(); };
                 const handleCurrentChange = (page) => { pagination.page = page; loadData(); };
-                const goBack = () => { window.location.href = 'dashboard.html'; };
-                const logout = () => {
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('userInfo');
-                    window.location.href = 'login.html';
-                };
-                
-                onMounted(() => { loadData(); });
-                
+                const goBack = () => AdminAPI.goBack();
+                const logout = () => AdminAPI.logout();
+
+                onMounted(() => { if (AdminAPI.checkAuth()) loadData(); });
                 return {
                     loading, dialogVisible, dialogTitle, pagination, tableData, formData,
-                    handleAdd, handleEdit, handleSubmit, handleToggleStatus, handleDelete,
-                    handleSizeChange, handleCurrentChange, goBack, logout
+                    handleAdd, handleEdit, handleSubmit, handleDelete, handleSizeChange, handleCurrentChange, goBack, logout
                 };
             }
         }).use(ElementPlus).mount('#app');
