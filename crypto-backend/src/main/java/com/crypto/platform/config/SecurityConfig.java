@@ -62,8 +62,7 @@ public class SecurityConfig {
                 .requestMatchers(
                     "/",                  // 根路径
                     "/auth/**",           // 认证接口
-                    "/admin/*.html",      // 管理后台静态页面
-                    "/admin/*.js",        // 管理后台静态脚本
+                    "/admin/**",          // 管理后台静态资源（html/js/css/vendor）
                     "/api/admin/**",      // 管理后台API接口
                     "/api/system/**",     // 系统管理API接口
                     "/system/**",         // 系统管理接口（菜单等）

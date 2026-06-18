@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crypto Platform - 管理后台</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.css">
+    <link rel="stylesheet" href="vendor/element-plus.css?v=3">
     <style>
+        [v-cloak] { display: none !important; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
         .layout-container { height: 100vh; display: flex; flex-direction: column; }
@@ -28,7 +29,8 @@
     </style>
 </head>
 <body>
-    <div id="app" class="layout-container">
+    <div id="boot-error" style="display:none;padding:40px;color:#e74c3c;font-size:16px;"></div>
+    <div id="app" class="layout-container" v-cloak>
         <div class="header">
             <div class="header-title">🚀 Crypto Platform 管理后台</div>
             <div>
@@ -43,7 +45,6 @@
                     <template v-for="menu in menuList" :key="menu.id">
                         <el-sub-menu v-if="menu.children && menu.children.length > 0" :index="menu.key">
                             <template #title>
-                                <el-icon v-if="menu.icon"><component :is="menu.icon" /></el-icon>
                                 <span>{{ menu.name }}</span>
                             </template>
                             <el-menu-item v-for="child in menu.children" :key="child.id" :index="child.key">
@@ -51,7 +52,6 @@
                             </el-menu-item>
                         </el-sub-menu>
                         <el-menu-item v-else :index="menu.key">
-                            <el-icon v-if="menu.icon"><component :is="menu.icon" /></el-icon>
                             <span>{{ menu.name }}</span>
                         </el-menu-item>
                     </template>
@@ -65,6 +65,26 @@
 
             <!-- 内嵌面板 -->
             <div v-else class="content">
+                <!-- 通用列表（未单独开发的菜单） -->
+                <div v-if="genericPage">
+                    <div class="table-container">
+                        <h3 style="margin-bottom: 20px;">{{ genericPage.title }}</h3>
+                        <el-table :data="genericList" stripe v-loading="loading" empty-text="暂无数据">
+                            <el-table-column v-for="col in genericPage.columns" :key="col.prop"
+                                :prop="col.prop" :label="col.label" :width="col.width" :show-overflow-tooltip="!!col.tooltip">
+                                <template #default="scope">
+                                    <el-tag v-if="col.tag" size="small">{{ formatCell(scope.row, col) }}</el-tag>
+                                    <span v-else>{{ formatCell(scope.row, col) }}</span>
+                                </template>
+                            </el-table-column>
+                        </el-table>
+                        <el-pagination v-model:current-page="genericQuery.page" v-model:page-size="genericQuery.size"
+                            :total="genericTotal" @current-change="loadGenericList"
+                            layout="total, prev, pager, next, jumper" style="margin-top: 20px; text-align: right;"></el-pagination>
+                    </div>
+                </div>
+
+                <template v-else>
                 <!-- 数据概览 -->
                 <div v-if="activeMenu === 'dashboard'">
                     <el-row :gutter="20" style="margin-bottom: 20px;">
@@ -356,6 +376,7 @@
                             @current-change="loadWithdraws" layout="total, prev, pager, next, jumper" style="margin-top: 20px; text-align: right;"></el-pagination>
                     </div>
                 </div>
+                </template>
             </div>
         </div>
 
@@ -375,30 +396,37 @@
         </el-dialog>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.11/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/element-plus@2.4.4/dist/index.full.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@element-plus/icons-vue@2.3.1/dist/index.min.js"></script>
-    <script src="admin-common.js"></script>
+    <script src="vendor/vue.global.js?v=3"></script>
+    <script src="vendor/element-plus.js?v=3"></script>
+    <script src="admin-common.js?v=3"></script>
+    <script src="menu-config.js?v=3"></script>
     <script>
-        const { createApp, ref, reactive, onMounted } = Vue;
+        (function () {
+            const showError = (msg) => {
+                const el = document.getElementById('boot-error');
+                if (el) {
+                    el.style.display = 'block';
+                    el.textContent = '页面初始化失败：' + msg + '。请强制刷新(Cmd+Shift+R)或联系管理员。';
+                }
+                console.error(msg);
+            };
 
-        const MENU_IFRAME_MAP = {
-            'spot-order': 'spot-trade.html',
-            'seconds-order': 'seconds-contract.html',
-            'cycle-order': 'cycle-contract.html',
-            'finance-product': 'finance-product.html',
-            'mining-config': 'mining-config.html',
-            'loan-config': 'loan-config.html',
-            'ieo-project': 'ieo-project.html',
-            'currency-config': 'currency-config.html',
-            'trading-pair': 'trading-pair.html',
-            'system-config': 'system-config.html'
-        };
+            try {
+                if (typeof Vue === 'undefined') throw new Error('Vue 脚本未加载');
+                if (typeof ElementPlus === 'undefined') throw new Error('ElementPlus 脚本未加载');
+                if (typeof AdminAPI === 'undefined') throw new Error('admin-common.js 未加载');
+                if (typeof MENU_REGISTRY === 'undefined') throw new Error('menu-config.js 未加载');
+
+        const { createApp, ref, reactive, onMounted } = Vue;
 
         const app = createApp({
             setup() {
                 const activeMenu = ref('dashboard');
                 const iframeSrc = ref('');
+                const genericPage = ref(null);
+                const genericList = ref([]);
+                const genericTotal = ref(0);
+                const genericQuery = reactive({ page: 1, size: 10 });
                 const loading = ref(false);
                 const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'));
                 const menuList = ref([]);
@@ -521,10 +549,51 @@
                     'withdraw-list': loadWithdraws
                 };
 
+                const loadGenericList = async () => {
+                    if (!genericPage.value || !genericPage.value.api) return;
+                    loading.value = true;
+                    const data = await AdminAPI.getPage(
+                        genericPage.value.api,
+                        genericPage.value.query || {},
+                        genericQuery.page,
+                        genericQuery.size
+                    );
+                    genericList.value = data.records;
+                    genericTotal.value = data.total;
+                    loading.value = false;
+                };
+
+                const formatCell = (row, col) => {
+                    const val = row[col.prop];
+                    if (col.tag && col.tag[val] !== undefined) return col.tag[val];
+                    return val ?? '-';
+                };
+
                 const handleMenuSelect = (index) => {
                     activeMenu.value = index;
-                    iframeSrc.value = MENU_IFRAME_MAP[index] || '';
-                    if (MENU_LOADERS[index]) MENU_LOADERS[index]();
+                    iframeSrc.value = '';
+                    genericPage.value = null;
+
+                    const config = MENU_REGISTRY[index];
+                    if (!config) {
+                        genericPage.value = { title: '功能开发中', api: null, columns: [{ prop: '_', label: '提示', width: 300 }] };
+                        genericList.value = [{ _: '该菜单功能尚未配置，请联系管理员' }];
+                        genericTotal.value = 0;
+                        return;
+                    }
+                    if (config.type === 'iframe') {
+                        iframeSrc.value = config.src;
+                        return;
+                    }
+                    if (config.type === 'builtin') {
+                        MENU_LOADERS[index]?.();
+                        return;
+                    }
+                    if (config.type === 'list') {
+                        genericPage.value = config;
+                        genericQuery.page = 1;
+                        loadGenericList();
+                    }
                 };
 
                 const searchUsers = () => { userQuery.page = 1; loadUsers(); };
@@ -607,11 +676,12 @@
                 });
 
                 return {
-                    activeMenu, iframeSrc, loading, userInfo, menuList, statistics, recentOrders,
+                    activeMenu, iframeSrc, genericPage, genericList, genericTotal, genericQuery,
+                    loading, userInfo, menuList, statistics, recentOrders,
                     userQuery, userList, userTotal, assetQuery, assetList, assetTotal,
                     kycQuery, kycList, kycTotal, depositQuery, depositList, depositTotal,
                     withdrawQuery, withdrawList, withdrawTotal, userDetailVisible, currentUser,
-                    handleMenuSelect, searchUsers, resetUserQuery, searchAssets, resetAssetQuery,
+                    handleMenuSelect, loadGenericList, formatCell, searchUsers, resetUserQuery, searchAssets, resetAssetQuery,
                     searchKycUsers, resetKycQuery, searchDeposits, resetDepositQuery,
                     searchWithdraws, resetWithdrawQuery, viewUser, adjustBalance, toggleUserStatus,
                     updateKycLevel, confirmDeposit, approveWithdraw, rejectWithdraw, logout
@@ -619,10 +689,17 @@
             }
         });
 
-        for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
-            app.component(key, component);
+        if (typeof ElementPlusIconsVue !== 'undefined') {
+            for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
+                app.component(key, component);
+            }
         }
         app.use(ElementPlus).mount('#app');
+
+            } catch (e) {
+                showError(e.message || String(e));
+            }
+        })();
     </script>
 </body>
 </html>

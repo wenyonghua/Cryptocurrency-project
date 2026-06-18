@@ -51,16 +51,10 @@ public class UserAsset implements Serializable {
     private BigDecimal frozen;
     
     /**
-     * 总余额（计算字段）
+     * 总余额（计算字段，非表字段）
      */
     @TableField(exist = false)
     private BigDecimal total;
-    
-    /**
-     * 逻辑删除：0-未删除，1-已删除
-     */
-    @TableLogic
-    private Integer deleted;
     
     /**
      * 创建时间

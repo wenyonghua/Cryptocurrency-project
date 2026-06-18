@@ -13,7 +13,6 @@ import com.crypto.platform.trade.service.ISpotOrderService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -25,13 +24,23 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "后台管理 - 杂项管理", description = "秒合约、周期合约、IEO、现货交易等管理接口")
 @RestController
 @RequestMapping("/admin/misc")
-@RequiredArgsConstructor
 public class MiscManagementController {
     
     private final ISecondsContractOrderService secondsContractOrderService;
     private final ICycleContractOrderService cycleContractOrderService;
     private final IIeoProjectService ieoProjectService;
     private final ISpotOrderService spotOrderService;
+
+    public MiscManagementController(
+            ISecondsContractOrderService secondsContractOrderService,
+            ICycleContractOrderService cycleContractOrderService,
+            IIeoProjectService ieoProjectService,
+            ISpotOrderService spotOrderService) {
+        this.secondsContractOrderService = secondsContractOrderService;
+        this.cycleContractOrderService = cycleContractOrderService;
+        this.ieoProjectService = ieoProjectService;
+        this.spotOrderService = spotOrderService;
+    }
     
     // ==================== 秒合约管理 ====================
     

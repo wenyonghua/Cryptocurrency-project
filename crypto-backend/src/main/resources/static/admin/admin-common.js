@@ -29,7 +29,14 @@ const AdminAPI = {
                 window.location.href = 'login.html';
                 return null;
             }
-            return await response.json();
+            const result = await response.json();
+            if (response.status === 403) {
+                if (typeof ElementPlus !== 'undefined') {
+                    ElementPlus.ElMessage.error(result.message || '无权限访问，请使用管理员账号登录');
+                }
+                return result;
+            }
+            return result;
         } catch (error) {
             console.error('API请求失败:', error);
             if (typeof ElementPlus !== 'undefined') {
