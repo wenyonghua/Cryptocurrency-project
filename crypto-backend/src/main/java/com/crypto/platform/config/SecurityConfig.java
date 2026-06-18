@@ -63,6 +63,8 @@ public class SecurityConfig {
                     "/",                  // 根路径
                     "/auth/**",           // 认证接口
                     "/admin/**",          // 管理后台静态资源
+                    "/api/admin/**",      // 管理后台API接口
+                    "/api/system/**",     // 系统管理API接口
                     "/doc.html",          // Knife4j 文档
                     "/webjars/**",        // Knife4j 资源
                     "/v3/api-docs/**",    // OpenAPI 文档
